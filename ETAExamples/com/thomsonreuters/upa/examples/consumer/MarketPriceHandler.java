@@ -107,9 +107,9 @@ public class MarketPriceHandler
     private EncodeIterator encIter = CodecFactory.createEncodeIterator();
     //pimchaya
     //keep all fields in the page regardless any type
-    TreeMap <Integer, String> pageMap = new TreeMap <Integer, String>();
+    TreeMap <Integer, String> allFieldsMap = new TreeMap <Integer, String>();
     //keep RMTES fields which can have partial update
-    TreeMap <Integer, String> rmtesMap = new TreeMap <Integer, String>();
+    TreeMap <Integer, String> pageMap = new TreeMap <Integer, String>();
     /**
      * Instantiates a new market price handler.
      *
@@ -584,14 +584,14 @@ public class MarketPriceHandler
         }
         //System.out.println("fieldValue.toString()");
         //print rmtes fields(page data) only
-        for (Integer fieldId  : rmtesMap.keySet())
-        {
-           System.out.println(rmtesMap.get(fieldId));
-        }
-        //print all fields including page data
-        /*for (Integer fieldId  : pageMap.keySet())
+        for (Integer fieldId  : pageMap.keySet())
         {
            System.out.println(pageMap.get(fieldId));
+        }
+        //print all fields including page data
+        /*for (Integer fieldId  : allFieldsMap.keySet())
+        {
+           System.out.println(allFieldsMap.get(fieldId));
         }*/
         return CodecReturnCodes.SUCCESS;
     }
@@ -868,7 +868,7 @@ public class MarketPriceHandler
                 ret = fidUIntValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	pageMap.put(fEntry.fieldId(), header + String.valueOf(fidUIntValue.toLong()));
+                	allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidUIntValue.toLong()));
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -880,7 +880,7 @@ public class MarketPriceHandler
                 ret = fidIntValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	pageMap.put(fEntry.fieldId(), header + String.valueOf(fidIntValue.toLong()));
+                	allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidIntValue.toLong()));
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -893,7 +893,7 @@ public class MarketPriceHandler
                 ret = fidFloatValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	pageMap.put(fEntry.fieldId(), header + String.valueOf(fidFloatValue.toFloat()));
+                	allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidFloatValue.toFloat()));
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -906,7 +906,7 @@ public class MarketPriceHandler
                 ret = fidDoubleValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	pageMap.put(fEntry.fieldId(), header + String.valueOf(fidDoubleValue.toDouble()));
+                	allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidDoubleValue.toDouble()));
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -919,7 +919,7 @@ public class MarketPriceHandler
                 ret = fidRealValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	pageMap.put(fEntry.fieldId(), header + fidRealValue.toString());
+                	allFieldsMap.put(fEntry.fieldId(), header + fidRealValue.toString());
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -937,13 +937,13 @@ public class MarketPriceHandler
 
                     if (enumType == null)
                     {
-                    	pageMap.put(fEntry.fieldId(),header + String.valueOf(fidEnumValue.toInt()));
+                    	allFieldsMap.put(fEntry.fieldId(),header + String.valueOf(fidEnumValue.toInt()));
                     }
                     else
                     {
                        String enumValue = enumType.display().toString() + "(" +
                                 fidEnumValue.toInt() + ")";
-                       pageMap.put(fEntry.fieldId(), header + enumValue);        
+                       allFieldsMap.put(fEntry.fieldId(), header + enumValue);        
                     }
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
@@ -957,7 +957,7 @@ public class MarketPriceHandler
                 ret = fidDateValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	pageMap.put(fEntry.fieldId(),header + fidDateValue.toString());
+                	allFieldsMap.put(fEntry.fieldId(),header + fidDateValue.toString());
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -971,7 +971,7 @@ public class MarketPriceHandler
                 ret = fidTimeValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	pageMap.put(fEntry.fieldId(),header + fidTimeValue.toString());
+                	allFieldsMap.put(fEntry.fieldId(),header + fidTimeValue.toString());
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -985,7 +985,7 @@ public class MarketPriceHandler
                 ret = fidDateTimeValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	pageMap.put(fEntry.fieldId(),header + fidDateTimeValue.toString());
+                	allFieldsMap.put(fEntry.fieldId(),header + fidDateTimeValue.toString());
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -997,7 +997,7 @@ public class MarketPriceHandler
                 ret = fidQosValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	pageMap.put(fEntry.fieldId(),header + fidQosValue.toString());
+                	allFieldsMap.put(fEntry.fieldId(),header + fidQosValue.toString());
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -1010,7 +1010,7 @@ public class MarketPriceHandler
                 ret = fidStateValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	pageMap.put(fEntry.fieldId(),header + fidStateValue.toString());
+                	allFieldsMap.put(fEntry.fieldId(),header + fidStateValue.toString());
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -1028,7 +1028,7 @@ public class MarketPriceHandler
             case DataTypes.UTF8_STRING:
             	if (fEntry.encodedData().length() > 0)
                 {
-            		pageMap.put(fEntry.fieldId(),header + fEntry.encodedData().toString());
+            		allFieldsMap.put(fEntry.fieldId(),header + fEntry.encodedData().toString());
                 }
                 else
                 {
@@ -1036,10 +1036,15 @@ public class MarketPriceHandler
                 }
                 break;
             case DataTypes.RMTES_STRING:
-                if (fEntry.encodedData().length() > 0)
+            	//page 64x14 or 80x25
+            	if( (fEntry.fieldId() >= 215 && fEntry.fieldId() <= 228) || 
+        				(fEntry.fieldId() >= 315 && fEntry.fieldId() <= 339)) {
+            		String fullUpdated = apply(fEntry.fieldId(), fEntry.encodedData().toString());
+                	allFieldsMap.put(fEntry.fieldId(),header + fullUpdated);
+            	}
+            	else if (fEntry.encodedData().length() > 0)
                 {
-                	String fullUpdated = apply(fEntry.fieldId(), fEntry.encodedData().toString());
-                	pageMap.put(fEntry.fieldId(),header + fullUpdated);
+            		allFieldsMap.put(fEntry.fieldId(),header + fEntry.encodedData().toString());
                 }
                 else
                 {
@@ -1047,12 +1052,12 @@ public class MarketPriceHandler
                 }
                 break;
             default:
-            	pageMap.put(fEntry.fieldId(),header + "Unsupported data type (" + DataTypes.toString(dataType) + ")");
+            	allFieldsMap.put(fEntry.fieldId(),header + "Unsupported data type (" + DataTypes.toString(dataType) + ")");
                 break;
         }
         if (ret == CodecReturnCodes.BLANK_DATA)
         {
-        	pageMap.put(fEntry.fieldId(),header + "<blank data>");
+        	allFieldsMap.put(fEntry.fieldId(),header + "<blank data>");
         }
 
         return CodecReturnCodes.SUCCESS;
@@ -1074,47 +1079,45 @@ public class MarketPriceHandler
     	//Create Hex String from RMTES string
     	String hexStr = toHexString(update);
     	String start;
+    	//if string starts with "1b5b" or "9b", perform partial update
 		if(hexStr.startsWith("1b5b") || hexStr.startsWith("9b")) {
 			if(hexStr.startsWith("1b5b"))
 				start = "1b5b";
 			else
 				start = "9b";
-			//find each partial updates in the field
+			//find all partial updates in the field
 			hexStr = hexStr.substring(start.length());
 			String[] partialUpdates = hexStr.split(start);
-			//System.out.println("total = " + partialUpdates.length);
+			//keep each partial update in the map. Key is position, value is updated value
 			TreeMap <Integer, String> partialUpdatesMap = new TreeMap <Integer, String>();
 			for(String anUpdate : partialUpdates) {
-				//System.out.println("["+anUpdate+"]");
 				String[] tmp = anUpdate.split("60");
 				Integer position = Integer.valueOf(hexStringtoString(tmp[0]));
 				String value = hexStringtoString(tmp[1]);
 				partialUpdatesMap.put(position, value);
 			}	
-			//create updated row which applies all partial updates to the current row
-			String currentRow = rmtesMap.get(fieldId);
+			//apply all updated values on the current values based on their positions 
+			String currentRow = pageMap.get(fieldId);
 			StringBuilder fullUpdate = new StringBuilder("");
 			int beginIndex=0;
 			int maxPosition = currentRow.length()-1;
 			for (Integer position : partialUpdatesMap.keySet())
 			{
 				String updatedStr = partialUpdatesMap.get(position);
-				//System.out.println("Apply position:" + position + " updatedValue:" + updatedStr);
 				fullUpdate.append(currentRow.substring(beginIndex, position)); 
 				fullUpdate.append(updatedStr);
 				beginIndex = position+updatedStr.length();
 			}
-			//copy last part to the updated row
 			if(beginIndex <=  maxPosition)
 				fullUpdate.append(currentRow.substring(beginIndex)); 
-			//System.out.println(fullUpdate.toString());
-			rmtesMap.put(fieldId, fullUpdate.toString());
+			//update the whole value which applied all partial updates to the field 
+			pageMap.put(fieldId, fullUpdate.toString());
 		}
-    	//full update, replace the whole row
+    	//full update, replace the current value with the updated value
 		else {
-			rmtesMap.put(fieldId, update);
+			pageMap.put(fieldId, update);
 		}
-    	return rmtesMap.get(fieldId);
+    	return pageMap.get(fieldId);
     }
    
     /**
