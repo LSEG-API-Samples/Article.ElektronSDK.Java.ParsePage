@@ -33,7 +33,7 @@ import com.thomsonreuters.ema.access.DataType.DataTypes;
 class AppClient implements OmmConsumerClient
 {
 	//a Map keeps field Id as a key with RmtesBuffer
-    TreeMap <Integer, RmtesBuffer> rmtesMap = new TreeMap <Integer, RmtesBuffer>();
+    TreeMap <Integer, RmtesBuffer> pageMap = new TreeMap <Integer, RmtesBuffer>();
 	public void onRefreshMsg(RefreshMsg refreshMsg, OmmConsumerEvent event)
 	{
 		if (refreshMsg.hasName())
@@ -91,20 +91,21 @@ class AppClient implements OmmConsumerClient
 		while (iter.hasNext())
 		{
 			fieldEntry = iter.next();
-            //apply() call for any RMTES field which is not blank
-            if(fieldEntry.loadType()==DataTypes.RMTES & fieldEntry.code()!=Data.DataCode.BLANK) {
+			//page 64x14 or 80x25
+			if( (fieldEntry.fieldId() >= 215 && fieldEntry.fieldId() <= 228) || 
+				(fieldEntry.fieldId() >= 315 && fieldEntry.fieldId() <= 339)) {	
                   //if the field id does not exist in the map, create new RmtesBuffer object
-                  if(!rmtesMap.containsKey(fieldEntry.fieldId())) {
-                        rmtesMap.put(fieldEntry.fieldId(), EmaFactory.createRmtesBuffer());
+                  if(!pageMap.containsKey(fieldEntry.fieldId())) {
+                	  pageMap.put(fieldEntry.fieldId(), EmaFactory.createRmtesBuffer());
                   }
                   //call apply() to interpret the intra-field position
-                  rmtesMap.get(fieldEntry.fieldId()).apply(fieldEntry.rmtes());
+                  pageMap.get(fieldEntry.fieldId()).apply(fieldEntry.rmtes());
             }
 		}
 		System.out.println("=================================================================================================================");
-		//prints all RMTES fields(the field id with its value) in the map on the console to display the page
-        for (Integer fieldId: rmtesMap.keySet()){
-               System.out.println(rmtesMap.get(fieldId).toString()); 
+		//prints all page fields in the map on the console to display the page
+        for (Integer fieldId: pageMap.keySet()){
+               System.out.println(pageMap.get(fieldId).toString()); 
         }
 	}
 
@@ -121,7 +122,7 @@ public class Consumer
 			
 			consumer  = EmaFactory.createOmmConsumer(EmaFactory.createOmmConsumerConfig().host("192.168.27.48:14002").username("user"));
 			
-			consumer.registerClient( EmaFactory.createReqMsg().serviceName("API_ELEKTRON_EPD_RSSL").name("3323bk.HKd"), appClient, 0);
+			consumer.registerClient( EmaFactory.createReqMsg().serviceName("API_ELEKTRON_EPD_RSSL").name("FXFX"), appClient, 0);
 			
 			Thread.sleep(60000*10);			// API calls onRefreshMsg(), onUpdateMsg() and onStatusMsg()
 		}
