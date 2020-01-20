@@ -98,7 +98,7 @@ class AppClient implements OmmConsumerClient
                   if(!pageMap.containsKey(fieldEntry.fieldId())) {
                 	  pageMap.put(fieldEntry.fieldId(), EmaFactory.createRmtesBuffer());
                   }
-                  //call apply() to interpret the intra-field position
+                  //call apply() to interpret the intra-field position sequences
                   pageMap.get(fieldEntry.fieldId()).apply(fieldEntry.rmtes());
             }
 		}
@@ -122,7 +122,7 @@ public class Consumer
 			
 			consumer  = EmaFactory.createOmmConsumer(EmaFactory.createOmmConsumerConfig().host("192.168.27.48:14002").username("user"));
 			
-			consumer.registerClient( EmaFactory.createReqMsg().serviceName("API_ELEKTRON_EPD_RSSL").name("FXFX"), appClient, 0);
+			consumer.registerClient( EmaFactory.createReqMsg().serviceName("API_ELEKTRON_EPD_RSSL").name("CNTSYFIX1"), appClient, 0);
 			
 			Thread.sleep(60000*10);			// API calls onRefreshMsg(), onUpdateMsg() and onStatusMsg()
 		}
