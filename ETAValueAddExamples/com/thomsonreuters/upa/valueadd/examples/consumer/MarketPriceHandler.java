@@ -1042,7 +1042,8 @@ class MarketPriceHandler
         return CodecReturnCodes.SUCCESS;
     }
     //pimchaya
-    private static String toHexString(String str) {
+    //convert String to Hex. 
+    private static String stringtoHexString(String str) {
         char[] chars = str.toCharArray();
         StringBuilder hex = new StringBuilder();
         for (char ch : chars) {
@@ -1050,106 +1051,87 @@ class MarketPriceHandler
         }
         return hex.toString();
     }
+    //Convert Hex to String
     private static String hexStringtoString(String hexStr) {
 		byte[] s = DatatypeConverter.parseHexBinary(hexStr);
 		return new String(s);
 	}
-    
+    //The syntax of an intra-field positioning sequence
+    //<CSI>n<HPA> 
+    //<CSI> is Hex 1b5b or 9b
+    //n	an ASCII numeric 
+    //<HPA> is Hex 60
     private String apply(int fieldId, String update) {
-    	//Create Hex String from RMTES string
-    	String hexStr = toHexString(update);
+    	//Create String to Hex. Assume the update variable is:
+    	//(0x1b)[33`1291  63(0x1b)[47`6	
+    	//hexStr will be 
+    	//1b5b33336031323931202036331b5b34376036
+    	String hexStr = stringtoHexString(update);
     	String start;
-    	//if string starts with "1b5b" or "9b", perform partial update
+    	//if string starts with <CSI> which can be "1b5b" or "9b", interpret intra-field positioning sequences. 
 		if(hexStr.startsWith("1b5b") || hexStr.startsWith("9b")) {
+			//set <CSI> which can be 1b5b 
 			if(hexStr.startsWith("1b5b"))
 				start = "1b5b";
+			//or 9b 
 			else
 				start = "9b";
-			//find all partial updates in the field
+			//find all intra-field positioning sequences in the field
+			//Remove the first <CSI> to split(next function) properly
 			hexStr = hexStr.substring(start.length());
-			String[] partialUpdates = hexStr.split(start);
-			//keep each partial update in the map. Key is position, value is updated value
-			TreeMap <Integer, String> partialUpdatesMap = new TreeMap <Integer, String>();
-			for(String anUpdate : partialUpdates) {
-				String[] tmp = anUpdate.split("60");
+			//hexStr will be 33336031323931202036331b5b34376036
+			//Call split function to create an array with substrings of Hex divided at occurrence of <CSI>.
+			//<CSI> is not included in the result.
+			//There are 2 intra-field positioning sequences after splitting: 1) 3333603132393120203633 2) 34376036
+			String[] intraFieldArray = hexStr.split(start);
+			
+			//Create a map of intra-field positioning sequences. Key is number position, value is string changed value
+			TreeMap <Integer, String> intraFieldMap = new TreeMap <Integer, String>();
+			//Syntax is position<HPA>changedValue; <HPA> is Hex 60
+			for(String anIntraField : intraFieldArray) {
+				String[] tmp = anIntraField.split("60");
+				//change Hex position to number
 				Integer position = Integer.valueOf(hexStringtoString(tmp[0]));
+				//change Hex changed value to String change value
 				String value = hexStringtoString(tmp[1]);
-				partialUpdatesMap.put(position, value);
-			}	
-			//apply all updated values on the current values based on their positions 
+				//put number position and changed value in intraFieldMap
+				intraFieldMap.put(position, value);
+			}
+			//There are 2 key-value mappings in intraFieldMap
+			//1) key = 33, value = "1291  63"
+			//2) key = 47, value = "6"
+			
+			//apply each value in the intraFieldMap on the current value based on key position.
+			//assume the current value is 	" 6387   -1s  6698  4975 |  1453  4409  2087  9054"  
+			//replace the row at offset 33 with "1291  63"
+			//replace the row at offset 47 with "6"
+			//the other characters are not changed
+			//The result is					" 6387   -1s  6698  4975 |  1453  1291  6387  9064"
 			String currentRow = pageMap.get(fieldId);
 			StringBuilder fullUpdate = new StringBuilder("");
 			int beginIndex=0;
 			int maxPosition = currentRow.length()-1;
-			for (Integer position : partialUpdatesMap.keySet())
+			for (Integer position : intraFieldMap.keySet())
 			{
-				String updatedStr = partialUpdatesMap.get(position);
+				String updatedStr = intraFieldMap.get(position);
 				fullUpdate.append(currentRow.substring(beginIndex, position)); 
 				fullUpdate.append(updatedStr);
 				beginIndex = position+updatedStr.length();
 			}
 			if(beginIndex <=  maxPosition)
 				fullUpdate.append(currentRow.substring(beginIndex)); 
-			//update the whole value which applied all partial updates to the field 
+			
+			//put key is field id and value which applied all intra-field positioning sequences  
 			pageMap.put(fieldId, fullUpdate.toString());
 		}
-    	//full update, replace the current value with the updated value
+    	//full update, replace the current value with the changed value
 		else {
 			pageMap.put(fieldId, update);
 		}
+		//return the full changed value
     	return pageMap.get(fieldId);
     }
-    /*private String apply(int fieldId, String update) {
-	//Create Hex String from RMTES string
-	String start;
-	String start1b5bt = hexStringtoString("1b");
-	StringBuffer start1b5bs = new StringBuffer(start1b5bt).append("\\\\[");
-	String start1b5b = start1b5bs.toString();
-	String start9b = hexStringtoString("009b");
-	System.out.println("***"+ start1b5b);
-	if(update.startsWith(start1b5b) || update.startsWith(start9b)) {
-		System.out.println("***partial update");
-		if(update.startsWith(start1b5b))
-			start = start1b5b;
-		else
-			start = start9b;
-		//find each partial updates in the field
-		update = update.substring(start.length());
-		String[] partialUpdates = update.split(start);
-		//System.out.println("total = " + partialUpdates.length);
-		TreeMap <Integer, String> partialUpdatesMap = new TreeMap <Integer, String>();
-		for(String anUpdate : partialUpdates) {
-			//System.out.println("["+anUpdate+"]");
-			String[] tmp = anUpdate.split("`");
-			Integer position = Integer.valueOf(tmp[0]);
-			String value = tmp[1];
-			partialUpdatesMap.put(position, value);
-		}	
-		//create updated row which applies all partial updates to the current row
-		String currentRow = pageMap.get(fieldId);
-		StringBuilder fullUpdate = new StringBuilder("");
-		int beginIndex=0;
-		int maxPosition = currentRow.length()-1;
-		for (Integer position : partialUpdatesMap.keySet())
-		{
-			String updatedStr = partialUpdatesMap.get(position);
-			//System.out.println("Apply position:" + position + " updatedValue:" + updatedStr);
-			fullUpdate.append(currentRow.substring(beginIndex, position)); 
-			fullUpdate.append(updatedStr);
-			//System.out.println(fullUpdate.toString());
-			beginIndex = position+updatedStr.length();
-		}
-		//copy last part to the updated row
-		if(beginIndex <=  maxPosition)
-			fullUpdate.append(currentRow.substring(beginIndex)); 
-		pageMap.put(fieldId, fullUpdate.toString());
-	}
-	//full update, replace the whole row
-	else {
-		pageMap.put(fieldId, update);
-	}
-	return pageMap.get(fieldId);
-}*/
+
     /*
      * Close all item streams.
      */
