@@ -98,7 +98,7 @@ class AppClient implements OmmConsumerClient
                   if(!pageMap.containsKey(fieldEntry.fieldId())) {
                 	  pageMap.put(fieldEntry.fieldId(), EmaFactory.createRmtesBuffer());
                   }
-                  //call apply() to interpret the intra-field position sequences
+                  //call apply() to interpret the full update and the partial update
                   pageMap.get(fieldEntry.fieldId()).apply(fieldEntry.rmtes());
             }
 		}
