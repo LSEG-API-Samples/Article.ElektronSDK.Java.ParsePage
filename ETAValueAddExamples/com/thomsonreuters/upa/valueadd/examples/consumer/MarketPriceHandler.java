@@ -1,6 +1,7 @@
 package com.thomsonreuters.upa.valueadd.examples.consumer;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -52,6 +53,8 @@ import com.thomsonreuters.upa.valueadd.domainrep.rdm.directory.Service;
 import com.thomsonreuters.upa.valueadd.domainrep.rdm.login.LoginRefresh;
 //pimchaya
 import java.util.TreeMap;
+import java.util.Vector;
+
 import javax.xml.bind.DatatypeConverter;
 /*
  * This is the market price handler for the UPA Value Add consumer application.
@@ -1056,79 +1059,52 @@ class MarketPriceHandler
 		byte[] s = DatatypeConverter.parseHexBinary(hexStr);
 		return new String(s);
 	}
-    //The syntax of an intra-field positioning sequence
-    //<CSI>n<HPA> 
-    //<CSI> is Hex 1b5b or 9b
-    //n	an ASCII numeric 
-    //<HPA> is Hex 60
+    //Apply partial update and full update
     private String apply(int fieldId, String update) {
-    	//Create String to Hex. Assume the update variable is:
-    	//(0x1b)[33`1291  63(0x1b)[47`6	
-    	//hexStr will be 
-    	//1b5b33336031323931202036331b5b34376036
+    	//Convert String to Hex.
     	String hexStr = stringtoHexString(update);
-    	String start;
-    	//if string starts with <CSI> which can be "1b5b" or "9b", interpret intra-field positioning sequences. 
-		if(hexStr.startsWith("1b5b") || hexStr.startsWith("9b")) {
-			//set <CSI> which can be 1b5b 
-			if(hexStr.startsWith("1b5b"))
-				start = "1b5b";
-			//or 9b 
-			else
-				start = "9b";
-			//find all intra-field positioning sequences in the field
-			//Remove the first <CSI> to split(next function) properly
-			hexStr = hexStr.substring(start.length());
-			//hexStr will be 33336031323931202036331b5b34376036
+    	//intra-field positioning sequence pattern
+    	String pattern = "((1b5b|9b)([0-9]+)(60).*)+";
+    	//if hex matches intra-field positioning sequence pattern e.g. <CSI>n<HPA>xxx<CSI>n<HPA>xxx
+		if(hexStr.matches(pattern)) {
 			//Call split function to create an array with substrings of Hex divided at occurrence of <CSI>.
 			//<CSI> is not included in the result.
-			//There are 2 intra-field positioning sequences after splitting: 1) 3333603132393120203633 2) 34376036
-			String[] intraFieldArray = hexStr.split(start);
+			String[] intraFieldArray = hexStr.split("(1b5b|9b)");
+			Vector<String> intraFieldVector = new Vector<String>(Arrays.asList(intraFieldArray));
+			//String starts with delimiter(<CSI>) so the first element will be empty
+			if(intraFieldVector.get(0).isEmpty())
+				intraFieldVector.remove(0);
 			
-			//Create a map of intra-field positioning sequences. Key is number position, value is string changed value
+			//Create a map of intra-field positioning sequences. Key is number position, value is updated value
 			TreeMap <Integer, String> intraFieldMap = new TreeMap <Integer, String>();
-			//Syntax is position<HPA>changedValue; <HPA> is Hex 60
-			for(String anIntraField : intraFieldArray) {
+			//Syntax is position<HPA>updatedValue. When <HPA> is hex 60
+			for(String anIntraField : intraFieldVector) {
 				String[] tmp = anIntraField.split("60");
 				//change Hex position to number
 				Integer position = Integer.valueOf(hexStringtoString(tmp[0]));
-				//change Hex changed value to String change value
+				//change updated value Hex to String
 				String value = hexStringtoString(tmp[1]);
-				//put number position and changed value in intraFieldMap
+				//put position and updated value in intraFieldMap
 				intraFieldMap.put(position, value);
 			}
-			//There are 2 key-value mappings in intraFieldMap
-			//1) key = 33, value = "1291  63"
-			//2) key = 47, value = "6"
-			
-			//apply each value in the intraFieldMap on the current value based on key position.
-			//assume the current value is 	" 6387   -1s  6698  4975 |  1453  4409  2087  9054"  
-			//replace the row at offset 33 with "1291  63"
-			//replace the row at offset 47 with "6"
-			//the other characters are not changed
-			//The result is					" 6387   -1s  6698  4975 |  1453  1291  6387  9064"
-			String currentRow = pageMap.get(fieldId);
-			StringBuilder fullUpdate = new StringBuilder("");
-			int beginIndex=0;
-			int maxPosition = currentRow.length()-1;
+			//get the cached value according to field id	
+			StringBuilder row = new StringBuilder(pageMap.get(fieldId));
+			//apply all intra-field positioning sequences to the cached value 
+			//by replacing with updated values based on the their offset positions.
 			for (Integer position : intraFieldMap.keySet())
-			{
-				String updatedStr = intraFieldMap.get(position);
-				fullUpdate.append(currentRow.substring(beginIndex, position)); 
-				fullUpdate.append(updatedStr);
-				beginIndex = position+updatedStr.length();
+			{	 
+				String updatedValue = intraFieldMap.get(position);
+				int end = updatedValue.length();
+				row.replace(position, position+end, updatedValue);
 			}
-			if(beginIndex <=  maxPosition)
-				fullUpdate.append(currentRow.substring(beginIndex)); 
-			
-			//put key is field id and value which applied all intra-field positioning sequences  
-			pageMap.put(fieldId, fullUpdate.toString());
+			//put key is field id and row which applied the partial update already
+			pageMap.put(fieldId, row.toString());
 		}
-    	//full update, replace the current value with the changed value
+    	//full update, put key is field id and the whole updated value 
 		else {
 			pageMap.put(fieldId, update);
 		}
-		//return the full changed value
+		//return the full updated value
     	return pageMap.get(fieldId);
     }
 
