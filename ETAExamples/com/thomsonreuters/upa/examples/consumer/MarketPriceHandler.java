@@ -1,5 +1,6 @@
 package com.thomsonreuters.upa.examples.consumer;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -28,6 +29,9 @@ import com.thomsonreuters.upa.codec.PostUserInfo;
 import com.thomsonreuters.upa.codec.Qos;
 import com.thomsonreuters.upa.codec.Real;
 import com.thomsonreuters.upa.codec.RefreshMsg;
+import com.thomsonreuters.upa.codec.RmtesBuffer;
+import com.thomsonreuters.upa.codec.RmtesCacheBuffer;
+import com.thomsonreuters.upa.codec.RmtesDecoder;
 import com.thomsonreuters.upa.codec.State;
 import com.thomsonreuters.upa.codec.StatusMsg;
 import com.thomsonreuters.upa.codec.StreamStates;
@@ -110,9 +114,11 @@ public class MarketPriceHandler
     private EncodeIterator encIter = CodecFactory.createEncodeIterator();
     //pimchaya
     //keep all fields in the page regardless any type
-    TreeMap <Integer, String> allFieldsMap = new TreeMap <Integer, String>();
-    //keep RMTES fields which can have partial update
-    TreeMap <Integer, String> pageMap = new TreeMap <Integer, String>();
+    //TreeMap <Integer, String> allFieldsMap = new TreeMap <Integer, String>();
+    //keep only page fields which can have partial update
+    TreeMap <Integer, RmtesCacheBuffer> pageMapRMTES = new TreeMap <Integer, RmtesCacheBuffer>();
+    int bufferlen = 200;
+    private RmtesDecoder rmtesDecoder = CodecFactory.createRmtesDecoder();
     /**
      * Instantiates a new market price handler.
      *
@@ -587,9 +593,18 @@ public class MarketPriceHandler
         }
         //System.out.println("fieldValue.toString()");
         //print rmtes fields(page data) only
-        for (Integer fieldId  : pageMap.keySet())
+        for (Integer fieldId  : pageMapRMTES.keySet())
         {
-           System.out.println(pageMap.get(fieldId));
+        	RmtesBuffer rmtesBuffer = CodecFactory.createRmtesBuffer(bufferlen);
+        	//Converts the given RmtesCacheBuffer into UCS2 Unicode and stores the data into the RmtesBuffer.
+        	if (rmtesDecoder.RMTESToUCS2(rmtesBuffer, pageMapRMTES.get(fieldId)) == CodecReturnCodes.SUCCESS)
+            {
+        		//display each row
+            	byte[] array = new byte[rmtesBuffer.length()];
+            	rmtesBuffer.byteData().get(array, 0, rmtesBuffer.length());
+            	System.out.println(new String(array, Charset.forName("UTF-16")));
+            }  else
+            	System.out.println("Failed converting");
         }
         //print all fields including page data
         /*for (Integer fieldId  : allFieldsMap.keySet())
@@ -871,7 +886,7 @@ public class MarketPriceHandler
                 ret = fidUIntValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidUIntValue.toLong()));
+                	//allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidUIntValue.toLong()));
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -883,7 +898,7 @@ public class MarketPriceHandler
                 ret = fidIntValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidIntValue.toLong()));
+                	//allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidIntValue.toLong()));
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -896,7 +911,7 @@ public class MarketPriceHandler
                 ret = fidFloatValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidFloatValue.toFloat()));
+                	//allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidFloatValue.toFloat()));
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -909,7 +924,7 @@ public class MarketPriceHandler
                 ret = fidDoubleValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidDoubleValue.toDouble()));
+                	//allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidDoubleValue.toDouble()));
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -922,7 +937,7 @@ public class MarketPriceHandler
                 ret = fidRealValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	allFieldsMap.put(fEntry.fieldId(), header + fidRealValue.toString());
+                	//allFieldsMap.put(fEntry.fieldId(), header + fidRealValue.toString());
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -940,13 +955,13 @@ public class MarketPriceHandler
 
                     if (enumType == null)
                     {
-                    	allFieldsMap.put(fEntry.fieldId(),header + String.valueOf(fidEnumValue.toInt()));
+                    	//allFieldsMap.put(fEntry.fieldId(),header + String.valueOf(fidEnumValue.toInt()));
                     }
                     else
                     {
                        String enumValue = enumType.display().toString() + "(" +
                                 fidEnumValue.toInt() + ")";
-                       allFieldsMap.put(fEntry.fieldId(), header + enumValue);        
+                       //allFieldsMap.put(fEntry.fieldId(), header + enumValue);        
                     }
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
@@ -960,7 +975,7 @@ public class MarketPriceHandler
                 ret = fidDateValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	allFieldsMap.put(fEntry.fieldId(),header + fidDateValue.toString());
+                	//allFieldsMap.put(fEntry.fieldId(),header + fidDateValue.toString());
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -974,7 +989,7 @@ public class MarketPriceHandler
                 ret = fidTimeValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	allFieldsMap.put(fEntry.fieldId(),header + fidTimeValue.toString());
+                	//allFieldsMap.put(fEntry.fieldId(),header + fidTimeValue.toString());
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -988,7 +1003,7 @@ public class MarketPriceHandler
                 ret = fidDateTimeValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	allFieldsMap.put(fEntry.fieldId(),header + fidDateTimeValue.toString());
+                	//allFieldsMap.put(fEntry.fieldId(),header + fidDateTimeValue.toString());
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -1000,7 +1015,7 @@ public class MarketPriceHandler
                 ret = fidQosValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	allFieldsMap.put(fEntry.fieldId(),header + fidQosValue.toString());
+                	//allFieldsMap.put(fEntry.fieldId(),header + fidQosValue.toString());
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -1013,7 +1028,7 @@ public class MarketPriceHandler
                 ret = fidStateValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	allFieldsMap.put(fEntry.fieldId(),header + fidStateValue.toString());
+                	//allFieldsMap.put(fEntry.fieldId(),header + fidStateValue.toString());
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -1031,7 +1046,7 @@ public class MarketPriceHandler
             case DataTypes.UTF8_STRING:
             	if (fEntry.encodedData().length() > 0)
                 {
-            		allFieldsMap.put(fEntry.fieldId(),header + fEntry.encodedData().toString());
+            		//allFieldsMap.put(fEntry.fieldId(),header + fEntry.encodedData().toString());
                 }
                 else
                 {
@@ -1042,12 +1057,26 @@ public class MarketPriceHandler
             	//page 64x14 or 80x25
             	if( (fEntry.fieldId() >= 215 && fEntry.fieldId() <= 228) || 
         				(fEntry.fieldId() >= 315 && fEntry.fieldId() <= 339)) {
-            		String fullUpdated = apply(fEntry.fieldId(), fEntry.encodedData().toString());
-                	allFieldsMap.put(fEntry.fieldId(),header + fullUpdated);
+            		RmtesCacheBuffer row;
+            		//the first time, create RmtesCacheBuffer
+            		if(!pageMapRMTES.containsKey(fEntry.fieldId()))
+            		{
+            			row = CodecFactory.createRmtesCacheBuffer(bufferlen);
+            		}//get the cached value according to field id
+            		else
+            			row = pageMapRMTES.get(fEntry.fieldId());
+            		//perform full or partial update using rmtesDecoder.RMTESApplyToCache(..) method
+            		if (rmtesDecoder.RMTESApplyToCache(fEntry.encodedData(), row) == CodecReturnCodes.SUCCESS)
+                    {   //cache the whole update in the map
+            			pageMapRMTES.put(fEntry.fieldId(), row);
+                    }
+            		else
+            			//if not success, return failure code
+            			ret = CodecReturnCodes.FAILURE;
             	}
             	else if (fEntry.encodedData().length() > 0)
                 {
-            		allFieldsMap.put(fEntry.fieldId(),header + fEntry.encodedData().toString());
+            		//allFieldsMap.put(fEntry.fieldId(),header + fEntry.encodedData().toString());
                 }
                 else
                 {
@@ -1055,77 +1084,15 @@ public class MarketPriceHandler
                 }
                 break;
             default:
-            	allFieldsMap.put(fEntry.fieldId(),header + "Unsupported data type (" + DataTypes.toString(dataType) + ")");
+            	//allFieldsMap.put(fEntry.fieldId(),header + "Unsupported data type (" + DataTypes.toString(dataType) + ")");
                 break;
         }
         if (ret == CodecReturnCodes.BLANK_DATA)
         {
-        	allFieldsMap.put(fEntry.fieldId(),header + "<blank data>");
+        	//allFieldsMap.put(fEntry.fieldId(),header + "<blank data>");
         }
 
         return CodecReturnCodes.SUCCESS;
-    }
-    //convert String to Hex. 
-    private static String stringtoHexString(String str) {
-        char[] chars = str.toCharArray();
-        StringBuilder hex = new StringBuilder();
-        for (char ch : chars) {
-            hex.append(Integer.toHexString((int) ch));
-        }
-        return hex.toString();
-    }
-    //Convert Hex to String
-    private static String hexStringtoString(String hexStr) {
-		byte[] s = DatatypeConverter.parseHexBinary(hexStr);
-		return new String(s);
-	}
-    //Apply partial update and full update
-    private String apply(int fieldId, String update) {
-    	//Convert String to Hex.
-    	String hexStr = stringtoHexString(update);
-    	//intra-field positioning sequence pattern
-    	String pattern = "((1b5b|9b)([0-9]+)(60).*)+";
-    	//if hex matches intra-field positioning sequence pattern e.g. <CSI>n<HPA>xxx<CSI>n<HPA>xxx
-		if(hexStr.matches(pattern)) {
-			//Call split function to create an array with substrings of Hex divided at occurrence of <CSI>.
-			//<CSI> is not included in the result.
-			String[] intraFieldArray = hexStr.split("(1b5b|9b)");
-			Vector<String> intraFieldVector = new Vector<String>(Arrays.asList(intraFieldArray));
-			//String starts with delimiter(<CSI>) so the first element will be empty
-			if(intraFieldVector.get(0).isEmpty())
-				intraFieldVector.remove(0);
-			
-			//Create a map of intra-field positioning sequences. Key is number position, value is updated value
-			TreeMap <Integer, String> intraFieldMap = new TreeMap <Integer, String>();
-			//Syntax is position<HPA>updatedValue. When <HPA> is hex 60
-			for(String anIntraField : intraFieldVector) {
-				String[] tmp = anIntraField.split("60");
-				//change Hex position to number
-				Integer position = Integer.valueOf(hexStringtoString(tmp[0]));
-				//change updated value Hex to String
-				String value = hexStringtoString(tmp[1]);
-				//put position and updated value in intraFieldMap
-				intraFieldMap.put(position, value);
-			}
-			//get the cached value according to field id	
-			StringBuilder row = new StringBuilder(pageMap.get(fieldId));
-			//apply all intra-field positioning sequences to the cached value 
-			//by replacing with updated values based on the their offset positions.
-			for (Integer position : intraFieldMap.keySet())
-			{	 
-				String updatedValue = intraFieldMap.get(position);
-				int end = updatedValue.length();
-				row.replace(position, position+end, updatedValue);
-			}
-			//put key is field id and row which applied the partial update already
-			pageMap.put(fieldId, row.toString());
-		}
-    	//full update, put key is field id and the whole updated value 
-		else {
-			pageMap.put(fieldId, update);
-		}
-		//return the full updated value
-    	return pageMap.get(fieldId);
     }
 
     /**
