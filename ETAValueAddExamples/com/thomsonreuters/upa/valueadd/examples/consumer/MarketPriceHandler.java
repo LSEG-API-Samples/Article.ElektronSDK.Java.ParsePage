@@ -114,7 +114,7 @@ class MarketPriceHandler
     private ReactorSubmitOptions submitOptions = ReactorFactory.createReactorSubmitOptions();
     //pimchaya
     //keep all fields of the rics regardless they are page fields or not
-    TreeMap <Integer, String> allFieldsMap = new TreeMap <Integer, String>();
+    //TreeMap <Integer, String> allFieldsMap = new TreeMap <Integer, String>();
     //keep only page fields which can have partial update
     TreeMap <Integer, RmtesCacheBuffer> pageMapRMTES = new TreeMap <Integer, RmtesCacheBuffer>();
     int bufferlen = 200;
@@ -864,7 +864,7 @@ class MarketPriceHandler
                 ret = fidUIntValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidUIntValue.toLong()));
+                	//allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidUIntValue.toLong()));
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -876,7 +876,7 @@ class MarketPriceHandler
                 ret = fidIntValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidIntValue.toLong()));
+                	//allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidIntValue.toLong()));
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -889,7 +889,7 @@ class MarketPriceHandler
                 ret = fidFloatValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidFloatValue.toFloat()));
+                	//allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidFloatValue.toFloat()));
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -902,7 +902,7 @@ class MarketPriceHandler
                 ret = fidDoubleValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidDoubleValue.toDouble()));
+                	//allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidDoubleValue.toDouble()));
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -915,7 +915,7 @@ class MarketPriceHandler
                 ret = fidRealValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidRealValue.toDouble()));
+                	//allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidRealValue.toDouble()));
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -933,13 +933,13 @@ class MarketPriceHandler
 
                     if (enumType == null)
                     {
-                    	allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidEnumValue.toInt()));
+                    	//allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidEnumValue.toInt()));
                     }
                     else
                     {
                     	String enumValue = enumType.display().toString() + "(" +
                                 fidEnumValue.toInt() + ")";
-                    	allFieldsMap.put(fEntry.fieldId(), header + enumValue);
+                    	//allFieldsMap.put(fEntry.fieldId(), header + enumValue);
                     }
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
@@ -953,7 +953,7 @@ class MarketPriceHandler
                 ret = fidDateValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	allFieldsMap.put(fEntry.fieldId(),header + fidDateValue.toString());
+                	//allFieldsMap.put(fEntry.fieldId(),header + fidDateValue.toString());
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -967,7 +967,7 @@ class MarketPriceHandler
                 ret = fidTimeValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	allFieldsMap.put(fEntry.fieldId(),header + fidTimeValue.toString());
+                	//allFieldsMap.put(fEntry.fieldId(),header + fidTimeValue.toString());
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -981,7 +981,7 @@ class MarketPriceHandler
                 ret = fidDateTimeValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	allFieldsMap.put(fEntry.fieldId(),header + fidDateTimeValue.toString());
+                	//allFieldsMap.put(fEntry.fieldId(),header + fidDateTimeValue.toString());
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -993,7 +993,7 @@ class MarketPriceHandler
                 ret = fidQosValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	allFieldsMap.put(fEntry.fieldId(),header + fidQosValue.toString());
+                	//allFieldsMap.put(fEntry.fieldId(),header + fidQosValue.toString());
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -1006,7 +1006,7 @@ class MarketPriceHandler
                 ret = fidStateValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	allFieldsMap.put(fEntry.fieldId(),header + fidStateValue.toString());
+                	//allFieldsMap.put(fEntry.fieldId(),header + fidStateValue.toString());
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -1024,7 +1024,7 @@ class MarketPriceHandler
             case DataTypes.UTF8_STRING:
             	if (fEntry.encodedData().length() > 0)
                 {
-            		allFieldsMap.put(fEntry.fieldId(),header + fEntry.encodedData().toString());
+            		//allFieldsMap.put(fEntry.fieldId(),header + fEntry.encodedData().toString());
                 }
                 else
                 {
@@ -1054,7 +1054,7 @@ class MarketPriceHandler
             	}
             	else if (fEntry.encodedData().length() > 0)
                 {
-            		allFieldsMap.put(fEntry.fieldId(),header + fEntry.encodedData().toString());
+            		//allFieldsMap.put(fEntry.fieldId(),header + fEntry.encodedData().toString());
                 }
                 else
                 {
@@ -1062,13 +1062,13 @@ class MarketPriceHandler
                 }
                 break;
             default:
-            	allFieldsMap.put(fEntry.fieldId(),header + "Unsupported data type (" + DataTypes.toString(dataType) + ")");
+            	//allFieldsMap.put(fEntry.fieldId(),header + "Unsupported data type (" + DataTypes.toString(dataType) + ")");
                 break;
         }
        
         if (ret == CodecReturnCodes.BLANK_DATA)
         {
-        	allFieldsMap.put(fEntry.fieldId(),header + "<blank data>");
+        	//allFieldsMap.put(fEntry.fieldId(),header + "<blank data>");
         }
         
         return CodecReturnCodes.SUCCESS;
