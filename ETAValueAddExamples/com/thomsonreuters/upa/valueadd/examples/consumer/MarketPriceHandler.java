@@ -1,5 +1,6 @@
 package com.thomsonreuters.upa.valueadd.examples.consumer;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -29,6 +30,9 @@ import com.thomsonreuters.upa.codec.PostUserInfo;
 import com.thomsonreuters.upa.codec.Qos;
 import com.thomsonreuters.upa.codec.Real;
 import com.thomsonreuters.upa.codec.RefreshMsg;
+import com.thomsonreuters.upa.codec.RmtesBuffer;
+import com.thomsonreuters.upa.codec.RmtesCacheBuffer;
+import com.thomsonreuters.upa.codec.RmtesDecoder;
 import com.thomsonreuters.upa.codec.State;
 import com.thomsonreuters.upa.codec.StatusMsg;
 import com.thomsonreuters.upa.codec.StreamStates;
@@ -112,12 +116,14 @@ class MarketPriceHandler
     //keep all fields of the rics regardless they are page fields or not
     TreeMap <Integer, String> allFieldsMap = new TreeMap <Integer, String>();
     //keep only page fields which can have partial update
-    TreeMap <Integer, String> pageMap = new TreeMap <Integer, String>();
+    TreeMap <Integer, RmtesCacheBuffer> pageMapRMTES = new TreeMap <Integer, RmtesCacheBuffer>();
+    int bufferlen = 200;
     MarketPriceHandler(StreamIdWatchList watchList)
     {
         this(DomainTypes.MARKET_PRICE, watchList);
     }
-
+    private RmtesDecoder rmtesDecoder = CodecFactory.createRmtesDecoder();
+    //RmtesCacheBuffer cacheBuf = CodecFactory.createRmtesCacheBuffer(2000);
     protected MarketPriceHandler(int domainType, StreamIdWatchList watchList)
     {
         this.watchList = watchList;
@@ -522,9 +528,18 @@ class MarketPriceHandler
             fieldValue.append((((RefreshMsg)msg).state()).toString() + "\n");
         int result = decodePayload(dIter, dictionary, fieldValue);
         //print rmtes fields(page data) only
-        for (Integer fieldId  : pageMap.keySet())
+        for (Integer fieldId  : pageMapRMTES.keySet())
         {
-           System.out.println(pageMap.get(fieldId));
+        	RmtesBuffer rmtesBuffer = CodecFactory.createRmtesBuffer(bufferlen);
+        	//Converts the given RmtesCacheBuffer into UCS2 Unicode and stores the data into the RmtesBuffer.
+        	if (rmtesDecoder.RMTESToUCS2(rmtesBuffer, pageMapRMTES.get(fieldId)) == CodecReturnCodes.SUCCESS)
+            {
+        		//display each row
+            	byte[] array = new byte[rmtesBuffer.length()];
+            	rmtesBuffer.byteData().get(array, 0, rmtesBuffer.length());
+            	System.out.println(new String(array, Charset.forName("UTF-16")));
+            }  else
+            	System.out.println("Failed converting");
         }
         //print all fields including page data
        /* for (Integer fieldId  : allFieldsMap.keySet())
@@ -533,7 +548,7 @@ class MarketPriceHandler
         }*/
         return result;
     }
-    
+   
     public int decodePayload(DecodeIterator dIter, DataDictionary dictionary, StringBuilder fieldValue)
     {
     	int ret = fieldList.decode(dIter, null);
@@ -1020,8 +1035,22 @@ class MarketPriceHandler
             	//page 64x14 or 80x25
             	if( (fEntry.fieldId() >= 215 && fEntry.fieldId() <= 228) || 
         				(fEntry.fieldId() >= 315 && fEntry.fieldId() <= 339)) {
-            		String fullUpdated = apply(fEntry.fieldId(), fEntry.encodedData().toString());
-                	allFieldsMap.put(fEntry.fieldId(),header + fullUpdated);
+            		RmtesCacheBuffer row;
+            		//the first time, create RmtesCacheBuffer
+            		if(!pageMapRMTES.containsKey(fEntry.fieldId()))
+            		{
+            			row = CodecFactory.createRmtesCacheBuffer(bufferlen);
+            		}//get the cached value according to field id
+            		else
+            			row = pageMapRMTES.get(fEntry.fieldId());
+            		//perform full or partial update using rmtesDecoder.RMTESApplyToCache(..) method
+            		if (rmtesDecoder.RMTESApplyToCache(fEntry.encodedData(), row) == CodecReturnCodes.SUCCESS)
+                    {   //cache the whole update in the map
+            			pageMapRMTES.put(fEntry.fieldId(), row);
+                    }
+            		else
+            			//if not success, return failure code
+            			ret = CodecReturnCodes.FAILURE;
             	}
             	else if (fEntry.encodedData().length() > 0)
                 {
@@ -1043,69 +1072,6 @@ class MarketPriceHandler
         }
         
         return CodecReturnCodes.SUCCESS;
-    }
-    //pimchaya
-    //convert String to Hex. 
-    private static String stringtoHexString(String str) {
-        char[] chars = str.toCharArray();
-        StringBuilder hex = new StringBuilder();
-        for (char ch : chars) {
-            hex.append(Integer.toHexString((int) ch));
-        }
-        return hex.toString();
-    }
-    //Convert Hex to String
-    private static String hexStringtoString(String hexStr) {
-		byte[] s = DatatypeConverter.parseHexBinary(hexStr);
-		return new String(s);
-	}
-    //Apply partial update and full update
-    private String apply(int fieldId, String update) {
-    	//Convert String to Hex.
-    	String hexStr = stringtoHexString(update);
-    	//intra-field positioning sequence pattern
-    	String pattern = "((1b5b|9b)([0-9]+)(60).*)+";
-    	//if hex matches intra-field positioning sequence pattern e.g. <CSI>n<HPA>xxx<CSI>n<HPA>xxx
-		if(hexStr.matches(pattern)) {
-			//Call split function to create an array with substrings of Hex divided at occurrence of <CSI>.
-			//<CSI> is not included in the result.
-			String[] intraFieldArray = hexStr.split("(1b5b|9b)");
-			Vector<String> intraFieldVector = new Vector<String>(Arrays.asList(intraFieldArray));
-			//String starts with delimiter(<CSI>) so the first element will be empty
-			if(intraFieldVector.get(0).isEmpty())
-				intraFieldVector.remove(0);
-			
-			//Create a map of intra-field positioning sequences. Key is number position, value is updated value
-			TreeMap <Integer, String> intraFieldMap = new TreeMap <Integer, String>();
-			//Syntax is position<HPA>updatedValue. When <HPA> is hex 60
-			for(String anIntraField : intraFieldVector) {
-				String[] tmp = anIntraField.split("60");
-				//change Hex position to number
-				Integer position = Integer.valueOf(hexStringtoString(tmp[0]));
-				//change updated value Hex to String
-				String value = hexStringtoString(tmp[1]);
-				//put position and updated value in intraFieldMap
-				intraFieldMap.put(position, value);
-			}
-			//get the cached value according to field id	
-			StringBuilder row = new StringBuilder(pageMap.get(fieldId));
-			//apply all intra-field positioning sequences to the cached value 
-			//by replacing with updated values based on the their offset positions.
-			for (Integer position : intraFieldMap.keySet())
-			{	 
-				String updatedValue = intraFieldMap.get(position);
-				int end = updatedValue.length();
-				row.replace(position, position+end, updatedValue);
-			}
-			//put key is field id and row which applied the partial update already
-			pageMap.put(fieldId, row.toString());
-		}
-    	//full update, put key is field id and the whole updated value 
-		else {
-			pageMap.put(fieldId, update);
-		}
-		//return the full updated value
-    	return pageMap.get(fieldId);
     }
 
     /*
