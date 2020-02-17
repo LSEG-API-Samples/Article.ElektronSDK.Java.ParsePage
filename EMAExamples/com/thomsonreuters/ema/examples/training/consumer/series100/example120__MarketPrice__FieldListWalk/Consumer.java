@@ -7,6 +7,10 @@
 
 package com.thomsonreuters.ema.examples.training.consumer.series100.example120__MarketPrice__FieldListWalk;
 
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
 import java.util.Iterator;
 import com.thomsonreuters.ema.access.FieldEntry;
 import com.thomsonreuters.ema.access.Msg;
@@ -92,8 +96,10 @@ class AppClient implements OmmConsumerClient
 		{
 			fieldEntry = iter.next();
 			//page 64x14 or 80x25
+			//TBD Page x
 			if( (fieldEntry.fieldId() >= 215 && fieldEntry.fieldId() <= 228) || 
-				(fieldEntry.fieldId() >= 315 && fieldEntry.fieldId() <= 339)) {	
+				(fieldEntry.fieldId() >= 315 && fieldEntry.fieldId() <= 339) ||
+				(fieldEntry.fieldId() >= 1359 && fieldEntry.fieldId() <= 1378)) {	
                   //if the field id does not exist in the map, create new RmtesBuffer object
                   if(!pageMap.containsKey(fieldEntry.fieldId())) {
                 	  pageMap.put(fieldEntry.fieldId(), EmaFactory.createRmtesBuffer());
@@ -104,9 +110,19 @@ class AppClient implements OmmConsumerClient
 		}
 		System.out.println("=================================================================================================================");
 		//prints all page fields in the map on the console to display the page
+		try {
+		//BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("Consumer"), "UTF16"));
         for (Integer fieldId: pageMap.keySet()){
-               System.out.println(pageMap.get(fieldId).toString()); 
+        	
+        	byte[] utf16Bytes=pageMap.get(fieldId).toString().getBytes("UTF16");
+           System.out.println((new String(utf16Bytes, Charset.forName("UTF-16"))));
+          //  writer.append((new String(utf16Bytes, Charset.forName("UTF-16"))));
         }
+        //writer.close();
+		}catch(Exception e) {
+			e.printStackTrace();
+        }
+		
 	}
 
 }
@@ -122,9 +138,9 @@ public class Consumer
 			
 			consumer  = EmaFactory.createOmmConsumer(EmaFactory.createOmmConsumerConfig().host("192.168.27.48:14002").username("user"));
 			
-			consumer.registerClient( EmaFactory.createReqMsg().serviceName("API_ELEKTRON_EPD_RSSL").name("CNTSYFIX1"), appClient, 0);
+			consumer.registerClient( EmaFactory.createReqMsg().serviceName("API_ELEKTRON_EDGE_TOKYO").name("BTMUSL03"), appClient, 0);
 			
-			Thread.sleep(60000*10);			// API calls onRefreshMsg(), onUpdateMsg() and onStatusMsg()
+			Thread.sleep(30000);			// API calls onRefreshMsg(), onUpdateMsg() and onStatusMsg()
 		}
 		catch (InterruptedException | OmmException excp)
 		{
