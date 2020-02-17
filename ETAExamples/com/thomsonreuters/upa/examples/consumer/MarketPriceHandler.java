@@ -593,6 +593,8 @@ public class MarketPriceHandler
         }
         //System.out.println("fieldValue.toString()");
         //print rmtes fields(page data) only
+        //try {
+        //BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("VAConsumer"), "UTF16"));
         for (Integer fieldId  : pageMapRMTES.keySet())
         {
         	RmtesBuffer rmtesBuffer = CodecFactory.createRmtesBuffer(bufferlen);
@@ -603,9 +605,14 @@ public class MarketPriceHandler
             	byte[] array = new byte[rmtesBuffer.length()];
             	rmtesBuffer.byteData().get(array, 0, rmtesBuffer.length());
             	System.out.println(new String(array, Charset.forName("UTF-16")));
+            	//writer.append((new String(array, Charset.forName("UTF-16"))));
             }  else
             	System.out.println("Failed converting");
-        }
+        } 
+        //writer.close();
+   /* }catch(IOException io) {
+    	io.printStackTrace();
+    }*/
         //print all fields including page data
         /*for (Integer fieldId  : allFieldsMap.keySet())
         {
@@ -1056,7 +1063,8 @@ public class MarketPriceHandler
             case DataTypes.RMTES_STRING:
             	//page 64x14 or 80x25
             	if( (fEntry.fieldId() >= 215 && fEntry.fieldId() <= 228) || 
-        				(fEntry.fieldId() >= 315 && fEntry.fieldId() <= 339)) {
+        				(fEntry.fieldId() >= 315 && fEntry.fieldId() <= 339)||
+        				(fEntry.fieldId() >= 1359 && fEntry.fieldId() <= 1378)) {
             		RmtesCacheBuffer row;
             		//the first time, create RmtesCacheBuffer
             		if(!pageMapRMTES.containsKey(fEntry.fieldId()))
