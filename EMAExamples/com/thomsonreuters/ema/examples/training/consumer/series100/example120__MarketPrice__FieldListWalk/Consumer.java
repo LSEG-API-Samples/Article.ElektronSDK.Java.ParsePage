@@ -138,7 +138,7 @@ public class Consumer
 			
 			consumer  = EmaFactory.createOmmConsumer(EmaFactory.createOmmConsumerConfig().host("192.168.27.48:14002").username("user"));
 			
-			consumer.registerClient( EmaFactory.createReqMsg().serviceName("API_ELEKTRON_EDGE_TOKYO").name("BTMUSL03"), appClient, 0);
+			consumer.registerClient( EmaFactory.createReqMsg().serviceName("API_ELEKTRON_EDGE_TOKYO").name("FXFX"), appClient, 0);
 			
 			Thread.sleep(30000);			// API calls onRefreshMsg(), onUpdateMsg() and onStatusMsg()
 		}
