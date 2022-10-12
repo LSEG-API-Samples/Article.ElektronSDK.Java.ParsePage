@@ -5,7 +5,7 @@
 // *|           Copyright (C) 2019 Refinitiv. All rights reserved.            		--
 ///*|----------------------------------------------------------------------------------------------------
 
-package rtsdk.parsepage.EMAExamples.com.refinitiv.ema.examples.training.consumer.series100.ex120_MP_FieldListWalk;
+package com.refinitiv.ema.examples.training.consumer.series100.ex120_MP_FieldListWalk;
 
 import java.nio.charset.Charset;
 import java.util.Iterator;
