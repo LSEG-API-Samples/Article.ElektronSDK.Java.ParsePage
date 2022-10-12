@@ -1,4 +1,12 @@
-package com.thomsonreuters.upa.valueadd.examples.consumer;
+/*|-----------------------------------------------------------------------------
+ *|            This source code is provided under the Apache 2.0 license      --
+ *|  and is provided AS IS with no warranty or guarantee of fit for purpose.  --
+ *|                See the project's LICENSE.md for details.                  --
+ *|           Copyright (C) 2019-2022 Refinitiv. All rights reserved.         --
+ *|-----------------------------------------------------------------------------
+ */
+
+package com.refinitiv.eta.valueadd.examples.consumer;
 
 import java.io.BufferedWriter;
 import java.io.FileOutputStream;
@@ -14,59 +22,59 @@ import java.util.List;
 import java.util.Map;
 
 
-import com.thomsonreuters.upa.codec.AckMsg;
-import com.thomsonreuters.upa.codec.Buffer;
-import com.thomsonreuters.upa.codec.CodecFactory;
-import com.thomsonreuters.upa.codec.CodecReturnCodes;
-import com.thomsonreuters.upa.codec.DataDictionary;
-import com.thomsonreuters.upa.codec.DataTypes;
-import com.thomsonreuters.upa.codec.DateTime;
-import com.thomsonreuters.upa.codec.DecodeIterator;
-import com.thomsonreuters.upa.codec.DictionaryEntry;
-import com.thomsonreuters.upa.codec.EncodeIterator;
-import com.thomsonreuters.upa.codec.EnumType;
-import com.thomsonreuters.upa.codec.FieldEntry;
-import com.thomsonreuters.upa.codec.FieldList;
-import com.thomsonreuters.upa.codec.Int;
-import com.thomsonreuters.upa.codec.Msg;
-import com.thomsonreuters.upa.codec.MsgClasses;
-import com.thomsonreuters.upa.codec.MsgKey;
-import com.thomsonreuters.upa.codec.PostUserInfo;
-import com.thomsonreuters.upa.codec.Qos;
-import com.thomsonreuters.upa.codec.Real;
-import com.thomsonreuters.upa.codec.RefreshMsg;
-import com.thomsonreuters.upa.codec.RmtesBuffer;
-import com.thomsonreuters.upa.codec.RmtesCacheBuffer;
-import com.thomsonreuters.upa.codec.RmtesDecoder;
-import com.thomsonreuters.upa.codec.State;
-import com.thomsonreuters.upa.codec.StatusMsg;
-import com.thomsonreuters.upa.codec.StreamStates;
-import com.thomsonreuters.upa.codec.Time;
-import com.thomsonreuters.upa.codec.UInt;
-import com.thomsonreuters.upa.codec.UpdateMsg;
-import com.thomsonreuters.upa.valueadd.examples.common.CacheHandler;
-import com.thomsonreuters.upa.valueadd.examples.common.CacheInfo;
-import com.thomsonreuters.upa.valueadd.examples.consumer.StreamIdWatchList.StreamIdKey;
-import com.thomsonreuters.upa.valueadd.examples.consumer.StreamIdWatchList.WatchListEntry;
-import com.thomsonreuters.upa.valueadd.reactor.ReactorChannel;
-import com.thomsonreuters.upa.valueadd.reactor.ReactorErrorInfo;
-import com.thomsonreuters.upa.valueadd.reactor.ReactorFactory;
-import com.thomsonreuters.upa.valueadd.reactor.ReactorReturnCodes;
-import com.thomsonreuters.upa.valueadd.reactor.ReactorSubmitOptions;
-import com.thomsonreuters.upa.shared.rdm.marketprice.MarketPriceClose;
-import com.thomsonreuters.upa.shared.rdm.marketprice.MarketPriceRequest;
-import com.thomsonreuters.upa.rdm.DomainTypes;
-import com.thomsonreuters.upa.rdm.UpdateEventTypes;
-import com.thomsonreuters.upa.transport.TransportBuffer;
-import com.thomsonreuters.upa.valueadd.domainrep.rdm.directory.Service;
-import com.thomsonreuters.upa.valueadd.domainrep.rdm.login.LoginRefresh;
+import com.refinitiv.eta.codec.AckMsg;
+import com.refinitiv.eta.codec.Buffer;
+import com.refinitiv.eta.codec.CodecFactory;
+import com.refinitiv.eta.codec.CodecReturnCodes;
+import com.refinitiv.eta.codec.DataDictionary;
+import com.refinitiv.eta.codec.DataTypes;
+import com.refinitiv.eta.codec.DateTime;
+import com.refinitiv.eta.codec.DecodeIterator;
+import com.refinitiv.eta.codec.DictionaryEntry;
+import com.refinitiv.eta.codec.EncodeIterator;
+import com.refinitiv.eta.codec.EnumType;
+import com.refinitiv.eta.codec.FieldEntry;
+import com.refinitiv.eta.codec.FieldList;
+import com.refinitiv.eta.codec.Int;
+import com.refinitiv.eta.codec.Msg;
+import com.refinitiv.eta.codec.MsgClasses;
+import com.refinitiv.eta.codec.MsgKey;
+import com.refinitiv.eta.codec.PostUserInfo;
+import com.refinitiv.eta.codec.Qos;
+import com.refinitiv.eta.codec.Real;
+import com.refinitiv.eta.codec.RefreshMsg;
+import com.refinitiv.eta.codec.RmtesBuffer;
+import com.refinitiv.eta.codec.RmtesCacheBuffer;
+import com.refinitiv.eta.codec.RmtesDecoder;
+import com.refinitiv.eta.codec.State;
+import com.refinitiv.eta.codec.StatusMsg;
+import com.refinitiv.eta.codec.StreamStates;
+import com.refinitiv.eta.codec.Time;
+import com.refinitiv.eta.codec.UInt;
+import com.refinitiv.eta.codec.UpdateMsg;
+import com.refinitiv.eta.valueadd.examples.common.CacheHandler;
+import com.refinitiv.eta.valueadd.examples.common.CacheInfo;
+import com.refinitiv.eta.valueadd.examples.consumer.StreamIdWatchList.StreamIdKey;
+import com.refinitiv.eta.valueadd.examples.consumer.StreamIdWatchList.WatchListEntry;
+import com.refinitiv.eta.valueadd.reactor.ReactorChannel;
+import com.refinitiv.eta.valueadd.reactor.ReactorErrorInfo;
+import com.refinitiv.eta.valueadd.reactor.ReactorFactory;
+import com.refinitiv.eta.valueadd.reactor.ReactorReturnCodes;
+import com.refinitiv.eta.valueadd.reactor.ReactorSubmitOptions;
+import com.refinitiv.eta.shared.rdm.marketprice.MarketPriceClose;
+import com.refinitiv.eta.shared.rdm.marketprice.MarketPriceRequest;
+import com.refinitiv.eta.rdm.DomainTypes;
+import com.refinitiv.eta.rdm.UpdateEventTypes;
+import com.refinitiv.eta.transport.TransportBuffer;
+import com.refinitiv.eta.valueadd.domainrep.rdm.directory.Service;
+import com.refinitiv.eta.valueadd.domainrep.rdm.login.LoginRefresh;
 //pimchaya
 import java.util.TreeMap;
 import java.util.Vector;
 
 import javax.xml.bind.DatatypeConverter;
 /*
- * This is the market price handler for the UPA Value Add consumer application.
+ * This is the market price handler for the eta Value Add consumer application.
  * It provides methods for sending the market price request(s) to a provider
  * and processing the response(s). Methods for decoding a field entry from a
  * response, and closing market price streams are also provided.
@@ -106,12 +114,12 @@ class MarketPriceHandler
     private UInt fidUIntValue = CodecFactory.createUInt();
     private Int fidIntValue = CodecFactory.createInt();
     private Real fidRealValue = CodecFactory.createReal();
-    private com.thomsonreuters.upa.codec.Enum fidEnumValue = CodecFactory.createEnum();
-    private com.thomsonreuters.upa.codec.Date fidDateValue = CodecFactory.createDate();
+    private com.refinitiv.eta.codec.Enum fidEnumValue = CodecFactory.createEnum();
+    private com.refinitiv.eta.codec.Date fidDateValue = CodecFactory.createDate();
     private Time fidTimeValue = CodecFactory.createTime();
     private DateTime fidDateTimeValue = CodecFactory.createDateTime();
-    private com.thomsonreuters.upa.codec.Float fidFloatValue = CodecFactory.createFloat();
-    private com.thomsonreuters.upa.codec.Double fidDoubleValue = CodecFactory.createDouble();
+    private com.refinitiv.eta.codec.Float fidFloatValue = CodecFactory.createFloat();
+    private com.refinitiv.eta.codec.Double fidDoubleValue = CodecFactory.createDouble();
     private Qos fidQosValue = CodecFactory.createQos();
     private State fidStateValue = CodecFactory.createState();
     private EncodeIterator encIter = CodecFactory.createEncodeIterator();
