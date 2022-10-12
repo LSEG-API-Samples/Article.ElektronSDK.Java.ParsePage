@@ -1,5 +1,18 @@
-package com.thomsonreuters.upa.examples.consumer;
+/*|-----------------------------------------------------------------------------
+ *|            This source code is provided under the Apache 2.0 license      --
+ *|  and is provided AS IS with no warranty or guarantee of fit for purpose.  --
+ *|                See the project's LICENSE.md for details.                  --
+ *|           Copyright (C) 2019-2022 Refinitiv. All rights reserved.         --
+ *|-----------------------------------------------------------------------------
+ */
 
+package com.refinitiv.eta.valueadd.examples.consumer;
+
+import java.io.BufferedWriter;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,78 +21,76 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import com.thomsonreuters.upa.codec.AckMsg;
-import com.thomsonreuters.upa.codec.Buffer;
-import com.thomsonreuters.upa.codec.CodecFactory;
-import com.thomsonreuters.upa.codec.CodecReturnCodes;
-import com.thomsonreuters.upa.codec.DataDictionary;
-import com.thomsonreuters.upa.codec.DataTypes;
-import com.thomsonreuters.upa.codec.DateTime;
-import com.thomsonreuters.upa.codec.DecodeIterator;
-import com.thomsonreuters.upa.codec.DictionaryEntry;
-import com.thomsonreuters.upa.codec.EncodeIterator;
-import com.thomsonreuters.upa.codec.EnumType;
-import com.thomsonreuters.upa.codec.FieldEntry;
-import com.thomsonreuters.upa.codec.FieldList;
-import com.thomsonreuters.upa.codec.Int;
-import com.thomsonreuters.upa.codec.Msg;
-import com.thomsonreuters.upa.codec.MsgClasses;
-import com.thomsonreuters.upa.codec.MsgKey;
-import com.thomsonreuters.upa.codec.PostUserInfo;
-import com.thomsonreuters.upa.codec.Qos;
-import com.thomsonreuters.upa.codec.Real;
-import com.thomsonreuters.upa.codec.RefreshMsg;
-import com.thomsonreuters.upa.codec.RmtesBuffer;
-import com.thomsonreuters.upa.codec.RmtesCacheBuffer;
-import com.thomsonreuters.upa.codec.RmtesDecoder;
-import com.thomsonreuters.upa.codec.State;
-import com.thomsonreuters.upa.codec.StatusMsg;
-import com.thomsonreuters.upa.codec.StreamStates;
-import com.thomsonreuters.upa.codec.Time;
-import com.thomsonreuters.upa.codec.UInt;
-import com.thomsonreuters.upa.codec.UpdateMsg;
-import com.thomsonreuters.upa.examples.common.ChannelSession;
-import com.thomsonreuters.upa.examples.common.LoginHandler;
-import com.thomsonreuters.upa.examples.common.StreamIdWatchList;
-import com.thomsonreuters.upa.examples.common.StreamIdWatchList.StreamIdKey;
-import com.thomsonreuters.upa.examples.common.StreamIdWatchList.WatchListEntry;
-import com.thomsonreuters.upa.shared.rdm.marketprice.MarketPriceClose;
-import com.thomsonreuters.upa.shared.rdm.marketprice.MarketPriceRequest;
-import com.thomsonreuters.upa.rdm.DomainTypes;
-import com.thomsonreuters.upa.rdm.UpdateEventTypes;
-import com.thomsonreuters.upa.transport.Error;
-import com.thomsonreuters.upa.transport.TransportBuffer;
-import com.thomsonreuters.upa.valueadd.domainrep.rdm.directory.Service;
-import com.thomsonreuters.upa.valueadd.domainrep.rdm.login.LoginRefresh;
+
+import com.refinitiv.eta.codec.AckMsg;
+import com.refinitiv.eta.codec.Buffer;
+import com.refinitiv.eta.codec.CodecFactory;
+import com.refinitiv.eta.codec.CodecReturnCodes;
+import com.refinitiv.eta.codec.DataDictionary;
+import com.refinitiv.eta.codec.DataTypes;
+import com.refinitiv.eta.codec.DateTime;
+import com.refinitiv.eta.codec.DecodeIterator;
+import com.refinitiv.eta.codec.DictionaryEntry;
+import com.refinitiv.eta.codec.EncodeIterator;
+import com.refinitiv.eta.codec.EnumType;
+import com.refinitiv.eta.codec.FieldEntry;
+import com.refinitiv.eta.codec.FieldList;
+import com.refinitiv.eta.codec.Int;
+import com.refinitiv.eta.codec.Msg;
+import com.refinitiv.eta.codec.MsgClasses;
+import com.refinitiv.eta.codec.MsgKey;
+import com.refinitiv.eta.codec.PostUserInfo;
+import com.refinitiv.eta.codec.Qos;
+import com.refinitiv.eta.codec.Real;
+import com.refinitiv.eta.codec.RefreshMsg;
+import com.refinitiv.eta.codec.RmtesBuffer;
+import com.refinitiv.eta.codec.RmtesCacheBuffer;
+import com.refinitiv.eta.codec.RmtesDecoder;
+import com.refinitiv.eta.codec.State;
+import com.refinitiv.eta.codec.StatusMsg;
+import com.refinitiv.eta.codec.StreamStates;
+import com.refinitiv.eta.codec.Time;
+import com.refinitiv.eta.codec.UInt;
+import com.refinitiv.eta.codec.UpdateMsg;
+import com.refinitiv.eta.valueadd.examples.common.CacheHandler;
+import com.refinitiv.eta.valueadd.examples.common.CacheInfo;
+import com.refinitiv.eta.valueadd.examples.consumer.StreamIdWatchList.StreamIdKey;
+import com.refinitiv.eta.valueadd.examples.consumer.StreamIdWatchList.WatchListEntry;
+import com.refinitiv.eta.valueadd.reactor.ReactorChannel;
+import com.refinitiv.eta.valueadd.reactor.ReactorErrorInfo;
+import com.refinitiv.eta.valueadd.reactor.ReactorFactory;
+import com.refinitiv.eta.valueadd.reactor.ReactorReturnCodes;
+import com.refinitiv.eta.valueadd.reactor.ReactorSubmitOptions;
+import com.refinitiv.eta.shared.rdm.marketprice.MarketPriceClose;
+import com.refinitiv.eta.shared.rdm.marketprice.MarketPriceRequest;
+import com.refinitiv.eta.rdm.DomainTypes;
+import com.refinitiv.eta.rdm.UpdateEventTypes;
+import com.refinitiv.eta.transport.TransportBuffer;
+import com.refinitiv.eta.valueadd.domainrep.rdm.directory.Service;
+import com.refinitiv.eta.valueadd.domainrep.rdm.login.LoginRefresh;
 //pimchaya
 import java.util.TreeMap;
 import java.util.Vector;
 
 import javax.xml.bind.DatatypeConverter;
-/**
- * This is the market price handler for the UPA consumer application. It
- * provides methods for sending the market price request(s) to a provider and
- * processing the response(s). Methods for decoding a field entry from a
+/*
+ * This is the market price handler for the eta Value Add consumer application.
+ * It provides methods for sending the market price request(s) to a provider
+ * and processing the response(s). Methods for decoding a field entry from a
  * response, and closing market price streams are also provided.
- * 
  */
-public class MarketPriceHandler
+class MarketPriceHandler
 {
-    
-    /**
-     * The transport buffer size request.
-     */
-    public static int TRANSPORT_BUFFER_SIZE_REQUEST = ChannelSession.MAX_MSG_SIZE;
-	
-    /**
-     * The transport buffer size close.
-     */
-    public static int TRANSPORT_BUFFER_SIZE_CLOSE = ChannelSession.MAX_MSG_SIZE;
+	private int TRANSPORT_BUFFER_SIZE_REQUEST = 1000;
+	private int TRANSPORT_BUFFER_SIZE_CLOSE = 1000;
 
     private int domainType;
+    
+    /* login stream id */
+    int loginStreamId;
 
     /* Channel to use for private stream redirect */
-    protected ChannelSession redirectChnl;
+    protected ReactorChannel redirectChnl;
 
     /* Login information to use for private stream redirect */
     private LoginRefresh redirectLoginInfo;
@@ -103,32 +114,29 @@ public class MarketPriceHandler
     private UInt fidUIntValue = CodecFactory.createUInt();
     private Int fidIntValue = CodecFactory.createInt();
     private Real fidRealValue = CodecFactory.createReal();
-    private com.thomsonreuters.upa.codec.Enum fidEnumValue = CodecFactory.createEnum();
-    private com.thomsonreuters.upa.codec.Date fidDateValue = CodecFactory.createDate();
+    private com.refinitiv.eta.codec.Enum fidEnumValue = CodecFactory.createEnum();
+    private com.refinitiv.eta.codec.Date fidDateValue = CodecFactory.createDate();
     private Time fidTimeValue = CodecFactory.createTime();
     private DateTime fidDateTimeValue = CodecFactory.createDateTime();
-    private com.thomsonreuters.upa.codec.Float fidFloatValue = CodecFactory.createFloat();
-    private com.thomsonreuters.upa.codec.Double fidDoubleValue = CodecFactory.createDouble();
+    private com.refinitiv.eta.codec.Float fidFloatValue = CodecFactory.createFloat();
+    private com.refinitiv.eta.codec.Double fidDoubleValue = CodecFactory.createDouble();
     private Qos fidQosValue = CodecFactory.createQos();
     private State fidStateValue = CodecFactory.createState();
     private EncodeIterator encIter = CodecFactory.createEncodeIterator();
+
+    private ReactorSubmitOptions submitOptions = ReactorFactory.createReactorSubmitOptions();
     //pimchaya
-    //keep all fields in the page regardless any type
+    //keep all fields of the rics regardless they are page fields or not
     //TreeMap <Integer, String> allFieldsMap = new TreeMap <Integer, String>();
     //keep only page fields which can have partial update
     TreeMap <Integer, RmtesCacheBuffer> pageMapRMTES = new TreeMap <Integer, RmtesCacheBuffer>();
     int bufferlen = 200;
-    private RmtesDecoder rmtesDecoder = CodecFactory.createRmtesDecoder();
-    /**
-     * Instantiates a new market price handler.
-     *
-     * @param watchList the watch list
-     */
-    public MarketPriceHandler(StreamIdWatchList watchList)
+    MarketPriceHandler(StreamIdWatchList watchList)
     {
         this(DomainTypes.MARKET_PRICE, watchList);
     }
-
+    private RmtesDecoder rmtesDecoder = CodecFactory.createRmtesDecoder();
+    //RmtesCacheBuffer cacheBuf = CodecFactory.createRmtesCacheBuffer(2000);
     protected MarketPriceHandler(int domainType, StreamIdWatchList watchList)
     {
         this.watchList = watchList;
@@ -147,22 +155,12 @@ public class MarketPriceHandler
         return new MarketPriceRequest();
     }
 
-    /**
-     * View request.
-     *
-     * @param doViewRequest the do view request
-     */
-    public void viewRequest(boolean doViewRequest)
+    void viewRequest(boolean doViewRequest)
     {
         viewRequested = doViewRequest;
     }
 
-    /**
-     * Snapshot request.
-     *
-     * @param snapshotRequested the snapshot requested
-     */
-    public void snapshotRequest(boolean snapshotRequested)
+    void snapshotRequest(boolean snapshotRequested)
     {
         this.snapshotRequested = snapshotRequested;
     }
@@ -172,43 +170,37 @@ public class MarketPriceHandler
         watchList.remove(streamId);
     }
 
-    protected int closeStream(ChannelSession chnl, int streamId, Error error)
+    protected int closeStream(ReactorChannel chnl, int streamId, ReactorErrorInfo errorInfo)
     {
         /* get a buffer for the item close */
-        TransportBuffer msgBuf = chnl.getTransportBuffer(TRANSPORT_BUFFER_SIZE_CLOSE, false,
-                                                         error);
+        TransportBuffer msgBuf = chnl.getBuffer(TRANSPORT_BUFFER_SIZE_CLOSE, false, errorInfo);
         if (msgBuf == null)
-            return CodecReturnCodes.FAILURE;
+            return ReactorReturnCodes.FAILURE;
 
         /* encode item close */
         closeMessage.clear();
         closeMessage.streamId(streamId);
         closeMessage.domainType(domainType);
         encIter.clear();
-        encIter.setBufferAndRWFVersion(msgBuf, chnl.channel().majorVersion(), chnl.channel().minorVersion());
+        encIter.setBufferAndRWFVersion(msgBuf, chnl.majorVersion(), chnl.minorVersion());
 
         int ret = closeMessage.encode(encIter);
         if (ret != CodecReturnCodes.SUCCESS)
         {
             System.out.println("encodeMarketPriceClose(): Failed <" + CodecReturnCodes.toString(ret) + ">");
         }
-        return chnl.write(msgBuf, error);
+      
+		return chnl.submit(msgBuf, submitOptions, errorInfo);
     }
 
-    /**
-     * Gets the first item.
-     *
-     * @param mpItemName the mp item name
-     * @return the first item
-     */
     /*
-     * this method is used while posting to query the first requested market
+     * This method is used while posting to query the first requested market
      * price item, if any. It will populate the passed in buffer with the name
      * and length information and return the streamId associated with the
      * stream. If mpItemName->length is 0 and streamId is returned as 0, this
      * indicates that there is no valid name available.
      */
-    public int getFirstItem(Buffer mpItemName)
+    int getFirstItem(Buffer mpItemName)
     {
         return watchList.getFirstItem(mpItemName);
     }
@@ -223,23 +215,12 @@ public class MarketPriceHandler
         return false;
     }
 
-    /**
+    /*
      * Encodes and sends item requests for three market price domains
      * (MarketPrice, MarketByPrice, MarketByOrder).
-     *
-     * @param chnl - The channel to send a source directory request to
-     * @param itemNames - List of item names
-     * @param isPrivateStream - flag indicating if requested items are private
-     *            stream or not.
-     * @param loginInfo - RDM login information
-     * @param serviceInfo - RDM directory response information
-     * @param error the error
-     * @return success if item requests can be made, can be encoded and sent
-     *         successfully. Failure if service does not support market price capability
-     *         or failure for encoding/sending request.
      */
-    public int sendItemRequests(ChannelSession chnl, List<String> itemNames, boolean isPrivateStream, LoginRefresh loginInfo,
-            Service serviceInfo, Error error)
+    int sendItemRequests(ReactorChannel chnl, List<String> itemNames, boolean isPrivateStream, LoginRefresh loginInfo,
+            Service serviceInfo, ReactorErrorInfo errorInfo)
     {
         if (itemNames == null || itemNames.isEmpty())
             return CodecReturnCodes.SUCCESS;
@@ -247,7 +228,7 @@ public class MarketPriceHandler
         /* check to see if the provider supports the market price domain */
         if (!hasMarketPriceCapability(serviceInfo.info().capabilitiesList()))
         {
-            error.text("'" +
+            errorInfo.error().text("'" +
                     DomainTypes.toString(marketPriceRequest.domainType()) +
                     "' not supported by the indicated provider");
             return CodecReturnCodes.FAILURE;
@@ -268,7 +249,7 @@ public class MarketPriceHandler
         // to send a batch request
         if (itemNames.size() == 1)
         {
-            return sendRequest(chnl, itemNames, error);
+            return sendRequest(chnl, itemNames, errorInfo);
         }
 
         if (!(loginInfo.checkHasFeatures() && 
@@ -276,11 +257,11 @@ public class MarketPriceHandler
               loginInfo.features().supportBatchRequests() == 1))
         {
             System.out.println("Connected Provider does not support Batch Requests. Sending Market Price requests as individual request messages.");
-            return sendRequest(chnl, itemNames, error);
+            return sendRequest(chnl, itemNames, errorInfo);
         }
 
         // batch
-        return sendBatchRequest(chnl, itemNames, error);
+        return sendBatchRequest(chnl, itemNames, errorInfo);
     }
 
     private void generateRequest(MarketPriceRequest marketPriceRequest, boolean isPrivateStream, Service srcDirInfo, LoginRefresh loginInfo)
@@ -317,29 +298,21 @@ public class MarketPriceHandler
     }
 
     //sends items as batch request
-    private int sendBatchRequest(ChannelSession chnl, List<String> itemNames, Error error)
+    private int sendBatchRequest(ReactorChannel chnl, List<String> itemNames, ReactorErrorInfo errorInfo)
     {
         int batchStreamId = watchList.add(domainType, "BATCH_" + new Date(), marketPriceRequest.checkPrivateStream());
         marketPriceRequest.streamId(batchStreamId);
-        int totalBytes = 0;
         for (String itemName : itemNames)
         {
             watchList.add(domainType, itemName, marketPriceRequest.checkPrivateStream());
             marketPriceRequest.itemNames().add(itemName);
-            try
-            {
-            	totalBytes += itemName.getBytes("UTF-8").length;
-            }
-            catch(Exception e)
-            {            	
-            }
         }
 
-        return encodeAndSendRequest(chnl, marketPriceRequest, totalBytes, error);
+        return encodeAndSendRequest(chnl, marketPriceRequest, errorInfo);
     }
 
     //sends one item at a time
-    private int sendRequest(ChannelSession chnl, List<String> itemNames, Error error)
+    private int sendRequest(ReactorChannel chnl, List<String> itemNames, ReactorErrorInfo errorInfo)
     {
         int ret = CodecReturnCodes.SUCCESS;
         for (String itemName : itemNames)
@@ -350,7 +323,7 @@ public class MarketPriceHandler
             marketPriceRequest.itemNames().add(itemName);
 
             marketPriceRequest.streamId(streamId);
-            ret = encodeAndSendRequest(chnl, marketPriceRequest, 0, error);
+            ret = encodeAndSendRequest(chnl, marketPriceRequest, errorInfo);
             if (ret < CodecReturnCodes.SUCCESS)
                 return ret;
         }
@@ -358,58 +331,48 @@ public class MarketPriceHandler
         return CodecReturnCodes.SUCCESS;
     }
 
-    private int encodeAndSendRequest(ChannelSession chnl, MarketPriceRequest marketPriceRequest, int totalBytes, 
-            Error error)
+    private int encodeAndSendRequest(ReactorChannel chnl, MarketPriceRequest marketPriceRequest,
+    		ReactorErrorInfo errorInfo)
     {
-    	int totalBytesToAllocate = Math.min(totalBytes *2, ChannelSession.MAX_MSG_SIZE * 4);  
-    	
         //get a buffer for the item request
-        TransportBuffer msgBuf = chnl.getTransportBuffer(Math.max(TRANSPORT_BUFFER_SIZE_REQUEST, totalBytesToAllocate), false, error);
+        TransportBuffer msgBuf = chnl.getBuffer(TRANSPORT_BUFFER_SIZE_REQUEST, false, errorInfo);
 
         if (msgBuf == null)
         {
             return CodecReturnCodes.FAILURE;
-        
         }
+
         encIter.clear();
-        encIter.setBufferAndRWFVersion(msgBuf, chnl.channel().majorVersion(), chnl.channel().minorVersion());
-        
+        encIter.setBufferAndRWFVersion(msgBuf, chnl.majorVersion(), chnl.minorVersion());
+
         int ret = marketPriceRequest.encode(encIter);
         if (ret < CodecReturnCodes.SUCCESS)
         {
-            error.text("MarketPriceRequest.encode() failed");
-            error.errorId(ret);
+            errorInfo.error().text("MarketPriceRequest.encode() failed");
+            errorInfo.error().errorId(ret);
             return ret;
         }
 
         System.out.println(marketPriceRequest.toString());
-        return chnl.write(msgBuf, error);
+        return chnl.submit(msgBuf, submitOptions, errorInfo);
     }
 
-    /**
-     * Publicly visible market price response handler
-     * 
+    /*
      * Processes a market price response. This consists of extracting the key,
      * printing out the item name contained in the key, decoding the field list
      * and field entry, and calling decodeFieldEntry() to decode the field entry
      * data.
-     *
-     * @param msg - The partially decoded message
-     * @param dIter - The decode iterator
-     * @param dictionary the dictionary
-     * @param error the error
-     * @return success if decoding succeeds, failure if it fails.
      */
-    public int processResponse(Msg msg, DecodeIterator dIter, DataDictionary dictionary, Error error)
+    int processResponse(Msg msg, DecodeIterator dIter, DataDictionary dictionary, CacheInfo cacheInfo, ReactorErrorInfo errorInfo)
     {
         switch (msg.msgClass())
         {
             case MsgClasses.REFRESH:
-                return handleRefresh(msg, dIter, dictionary, error);
+                return handleRefresh(msg, dIter, dictionary, cacheInfo, errorInfo);
             case MsgClasses.UPDATE:
-                return handleUpdate(msg, dIter, dictionary);
+                return handleUpdate(msg, dIter, dictionary, cacheInfo);
             case MsgClasses.STATUS:
-                return handleStatus(msg, error);
+                return handleStatus(msg, errorInfo);
             case MsgClasses.ACK:
                 return handleAck(msg);
             default:
@@ -429,11 +392,11 @@ public class MarketPriceHandler
 
         AckMsg ackMsg = (AckMsg)msg;
 
-        fieldValue.append("\tackId=" + ackMsg.ackId());
+        fieldValue.append("\tackId=" + ackMsg.ackId() + "\n");
         if (ackMsg.checkHasSeqNum())
-            fieldValue.append("\tseqNum=" + ackMsg.seqNum());
+            fieldValue.append("\tseqNum=" + ackMsg.seqNum() + "\n");
         if (ackMsg.checkHasNakCode())
-            fieldValue.append("\tnakCode=" + ackMsg.nakCode());
+            fieldValue.append("\tnakCode=" + ackMsg.nakCode() + "\n");
         if (ackMsg.checkHasText())
             fieldValue.append("\ttext=" + ackMsg.text().toString());
 
@@ -460,8 +423,8 @@ public class MarketPriceHandler
                 fieldValue.append(key.name().toString() + "\nDOMAIN: " +
                         DomainTypes.toString(msg.domainType()) + "\n");
                 if (msg.msgClass() == MsgClasses.UPDATE)
-                {
-                    fieldValue.append("UPDATE TYPE: " + UpdateEventTypes.toString(((UpdateMsg)msg).updateType()) + "\n");
+                {   
+                    fieldValue.append("UPDATE TYPE: " + UpdateEventTypes.toString(((UpdateMsg)msg).updateType()) + "\n");   
                 }
             }
 
@@ -482,7 +445,7 @@ public class MarketPriceHandler
             else
             {
                 // check if this is login stream for offstream posting
-                if (msg.streamId() == LoginHandler.LOGIN_STREAM_ID)
+                if (msg.streamId() == loginStreamId)
                 {
                     fieldValue.append("OFFPOST " + "\nDOMAIN: " + DomainTypes.toString(msg.domainType()) + "\n");
                 }
@@ -490,7 +453,7 @@ public class MarketPriceHandler
         }
     }
 
-    protected int handleStatus(Msg msg, com.thomsonreuters.upa.transport.Error error)
+    protected int handleStatus(Msg msg, ReactorErrorInfo errorInfo)
     {
         StatusMsg statusMsg = (StatusMsg)msg;
         System.out.println("Received Item StatusMsg for stream " + msg.streamId());
@@ -523,7 +486,7 @@ public class MarketPriceHandler
                     System.out.println("Received non-private response for stream " +
                             msg.streamId() + " that should be private - closing stream");
                     // close stream
-                    closeStream(redirectChnl, msg.streamId(), error);
+                    closeStream(redirectChnl, msg.streamId(), errorInfo);
                     // remove private stream entry from list
                     removeMarketPriceItemEntry(msg.streamId());
                     return CodecReturnCodes.FAILURE;
@@ -538,7 +501,7 @@ public class MarketPriceHandler
         if (statusMsg.state().streamState() == StreamStates.REDIRECTED
                 && (statusMsg.checkPrivateStream()))
         {
-            int ret = redirectToPrivateStream(msg.streamId(), error);
+            int ret = redirectToPrivateStream(msg.streamId(), errorInfo);
             if (ret != CodecReturnCodes.SUCCESS)
             {
                 return ret;
@@ -548,52 +511,37 @@ public class MarketPriceHandler
         return CodecReturnCodes.SUCCESS;
     }
 
-    protected int handleUpdate(Msg msg, DecodeIterator dIter, DataDictionary dictionary)
+    protected int handleUpdate(Msg msg, DecodeIterator dIter, DataDictionary dictionary, CacheInfo cacheInfo)
     {
         UpdateMsg updateMsg = (UpdateMsg)msg;
         PostUserInfo pu = updateMsg.postUserInfo();
         if ( pu != null)
         {
         	System.out.println(" Received UpdateMsg for stream " + updateMsg.streamId() + " from publisher with user ID: " + pu.userId() + " at user address: " + pu.userAddrToString(pu.userAddr()));
-        }    	
-        return decode(msg, dIter, dictionary);
+        }
+        
+        if (cacheInfo.useCache)
+    	{
+    		int ret = CacheHandler.applyMsgToCache(dIter, watchList.get(msg.streamId()).cacheEntry, cacheInfo, msg);
+    		if (ret != CodecReturnCodes.SUCCESS)
+    			System.out.println(" Error Applying payload to cache : " + cacheInfo.cacheError.text());
+    		else
+    			System.out.println("Payload cached");
+    		return ret;
+    	}
+    	else
+    		return decode(msg, dIter, dictionary);
     }
 
     protected int decode(Msg msg, DecodeIterator dIter, DataDictionary dictionary)
     {
-        int ret = fieldList.decode(dIter, null);
-        if (ret != CodecReturnCodes.SUCCESS)
-        {
-            System.out.println("DecodeFieldList() failed with return code: " + ret);
-            return ret;
-        }
-
         StringBuilder fieldValue = new StringBuilder();
         getItemName(msg, fieldValue);
         if (msg.msgClass() == MsgClasses.REFRESH)
             fieldValue.append((((RefreshMsg)msg).state()).toString() + "\n");
-
-        // decode each field entry in list
-        while ((ret = fieldEntry.decode(dIter)) != CodecReturnCodes.END_OF_CONTAINER)
-        {
-            if (ret != CodecReturnCodes.SUCCESS)
-            {
-                System.out.println("decodeFieldEntry() failed with return code: " + ret);
-                return ret;
-            }
-
-            //ret = decodeFieldEntry(fieldEntry, dIter, dictionary, fieldValue);
-            ret = decodeFieldEntryPage(fieldEntry, dIter, dictionary, fieldValue);
-            if (ret != CodecReturnCodes.SUCCESS)
-            {
-                System.out.println("decodeFieldEntry() failed");
-                return ret;
-            }
-            fieldValue.append("\n");
-        }
-        //System.out.println("fieldValue.toString()");
+        int result = decodePayload(dIter, dictionary, fieldValue);
         //print rmtes fields(page data) only
-        //try {
+    //try {
         //BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("VAConsumer"), "UTF16"));
         for (Integer fieldId  : pageMapRMTES.keySet())
         {
@@ -614,22 +562,52 @@ public class MarketPriceHandler
     	io.printStackTrace();
     }*/
         //print all fields including page data
-        /*for (Integer fieldId  : allFieldsMap.keySet())
+       /* for (Integer fieldId  : allFieldsMap.keySet())
         {
            System.out.println(allFieldsMap.get(fieldId));
         }*/
+        return result;
+    }
+   
+    public int decodePayload(DecodeIterator dIter, DataDictionary dictionary, StringBuilder fieldValue)
+    {
+    	int ret = fieldList.decode(dIter, null);
+        if (ret != CodecReturnCodes.SUCCESS)
+        {
+            System.out.println("DecodeFieldList() failed with return code: " + ret);
+            return ret;
+        }
+
+        // decode each field entry in list
+        while ((ret = fieldEntry.decode(dIter)) != CodecReturnCodes.END_OF_CONTAINER)
+        {   
+            if (ret != CodecReturnCodes.SUCCESS)
+            {
+                System.out.println("decodeFieldEntry() failed with return code: " + ret);
+                return ret;
+            }
+            //decode page data containing partial update
+            ret = decodeFieldEntryPage(fieldEntry, dIter, dictionary, fieldValue);
+            if (ret != CodecReturnCodes.SUCCESS)
+            {
+                System.out.println("decodeFieldEntry() failed");
+                return ret;
+            }
+            fieldValue.append("\n");
+        }
+        //System.out.println(fieldValue.toString());
         return CodecReturnCodes.SUCCESS;
     }
 
-    protected int handleRefresh(Msg msg, DecodeIterator dIter, DataDictionary dictionary, Error error)
+    protected int handleRefresh(Msg msg, DecodeIterator dIter, DataDictionary dictionary, CacheInfo cacheInfo, ReactorErrorInfo errorInfo)
     {
-        RefreshMsg refreshMsg = (RefreshMsg)msg;
+        RefreshMsg refreshMsg = (RefreshMsg)msg; 
         PostUserInfo pu = refreshMsg.postUserInfo();
         if ( pu != null)
         {
         	System.out.println(" Received RefreshMsg for stream " + refreshMsg.streamId() + " from publisher with user ID: " + pu.userId() + " at user address: " + pu.userAddrToString(pu.userAddr()));
-        }            
-                
+        }        
+
         WatchListEntry wle = watchList.get(msg.streamId());
 
         /* check if this response should be on private stream but is not */
@@ -639,11 +617,11 @@ public class MarketPriceHandler
             System.out.println("Received non-private response for stream " + msg.streamId() +
                     " that should be private - closing stream");
             // close stream
-            closeStream(redirectChnl, msg.streamId(), error);
+            closeStream(redirectChnl, msg.streamId(), errorInfo);
 
             // remove private stream entry from list
             removeMarketPriceItemEntry(msg.streamId());
-            error.text("Received non-private response for stream " + msg.streamId() +
+            errorInfo.error().text("Received non-private response for stream " + msg.streamId() +
                     " that should be private - closing stream");
             return CodecReturnCodes.FAILURE;
         }
@@ -654,7 +632,21 @@ public class MarketPriceHandler
         wle.itemState.dataState(refreshMsg.state().dataState());
         wle.itemState.streamState(refreshMsg.state().streamState());
 
-        return this.decode(msg, dIter, dictionary);
+    	if (cacheInfo.useCache)
+    	{
+        	if (wle.cacheEntry == null)
+        		wle.cacheEntry = CacheHandler.createCacheEntry(cacheInfo);
+        	
+    		int ret = CacheHandler.applyMsgToCache(dIter, wle.cacheEntry, cacheInfo, msg);
+    		if (ret != CodecReturnCodes.SUCCESS)
+    			errorInfo.error().text(" Error Applying payload to cache : " + cacheInfo.cacheError.text());
+    		else
+    			System.out.println("Payload cached");
+    		
+    		return ret;
+    	}
+    	else
+    		return this.decode(msg, dIter, dictionary);
     }
 
     /*
@@ -662,8 +654,7 @@ public class MarketPriceHandler
      * 
      * Decodes the field entry data and prints out the field entry data with
      * help of the dictionary. Returns success if decoding succeeds or failure
-     * if decoding fails. fEntry - The field entry data dIter - The decode
-     * iterator
+     * if decoding fails.
      */
     protected int decodeFieldEntry(FieldEntry fEntry, DecodeIterator dIter,
             DataDictionary dictionary, StringBuilder fieldValue)
@@ -741,7 +732,7 @@ public class MarketPriceHandler
                 ret = fidRealValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                    fieldValue.append(fidRealValue.toString());
+                    fieldValue.append(fidRealValue.toDouble());
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -944,7 +935,7 @@ public class MarketPriceHandler
                 ret = fidRealValue.decode(dIter);
                 if (ret == CodecReturnCodes.SUCCESS)
                 {
-                	//allFieldsMap.put(fEntry.fieldId(), header + fidRealValue.toString());
+                	//allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidRealValue.toDouble()));
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
                 {
@@ -962,13 +953,13 @@ public class MarketPriceHandler
 
                     if (enumType == null)
                     {
-                    	//allFieldsMap.put(fEntry.fieldId(),header + String.valueOf(fidEnumValue.toInt()));
+                    	//allFieldsMap.put(fEntry.fieldId(), header + String.valueOf(fidEnumValue.toInt()));
                     }
                     else
                     {
-                       String enumValue = enumType.display().toString() + "(" +
+                    	String enumValue = enumType.display().toString() + "(" +
                                 fidEnumValue.toInt() + ")";
-                       //allFieldsMap.put(fEntry.fieldId(), header + enumValue);        
+                    	//allFieldsMap.put(fEntry.fieldId(), header + enumValue);
                     }
                 }
                 else if (ret != CodecReturnCodes.BLANK_DATA)
@@ -1057,13 +1048,13 @@ public class MarketPriceHandler
                 }
                 else
                 {
-                	ret = CodecReturnCodes.BLANK_DATA;
+                    ret = CodecReturnCodes.BLANK_DATA;
                 }
                 break;
             case DataTypes.RMTES_STRING:
             	//page 64x14 or 80x25
             	if( (fEntry.fieldId() >= 215 && fEntry.fieldId() <= 228) || 
-        				(fEntry.fieldId() >= 315 && fEntry.fieldId() <= 339)||
+        				(fEntry.fieldId() >= 315 && fEntry.fieldId() <= 339) || 
         				(fEntry.fieldId() >= 1359 && fEntry.fieldId() <= 1378)) {
             		RmtesCacheBuffer row;
             		//the first time, create RmtesCacheBuffer
@@ -1095,22 +1086,19 @@ public class MarketPriceHandler
             	//allFieldsMap.put(fEntry.fieldId(),header + "Unsupported data type (" + DataTypes.toString(dataType) + ")");
                 break;
         }
+       
         if (ret == CodecReturnCodes.BLANK_DATA)
         {
         	//allFieldsMap.put(fEntry.fieldId(),header + "<blank data>");
         }
-
+        
         return CodecReturnCodes.SUCCESS;
     }
 
-    /**
+    /*
      * Close all item streams.
-     *
-     * @param chnl - The channel to send a item stream close to
-     * @param error the error
-     * @return the int
      */
-    public int closeStreams(ChannelSession chnl, Error error)
+    int closeStreams(ReactorChannel chnl, ReactorErrorInfo errorInfo)
     {
         int ret = 0;
 
@@ -1127,7 +1115,7 @@ public class MarketPriceHandler
                 continue;
             if (entry.getValue().domainType == domainType)
             {
-                ret = closeStream(chnl, entry.getKey().streamId(), error);
+                ret = closeStream(chnl, entry.getKey().streamId(), errorInfo);
                 if (ret != CodecReturnCodes.SUCCESS)
                 {
                     return ret;
@@ -1140,10 +1128,9 @@ public class MarketPriceHandler
     }
 
     /*
-     * Redirect a request to a private stream. streamId - The stream id to be
-     * redirected to private stream
+     * Redirect a request to a private stream.
      */
-    private int redirectToPrivateStream(int streamId, com.thomsonreuters.upa.transport.Error error)
+    private int redirectToPrivateStream(int streamId, ReactorErrorInfo errorInfo)
     {
         WatchListEntry wle = watchList.get(streamId);
 
@@ -1156,6 +1143,11 @@ public class MarketPriceHandler
         generateRequest(marketPriceRequest, true, redirectSrcDirInfo, redirectLoginInfo);
         marketPriceRequest.itemNames().add(wle.itemName);
         marketPriceRequest.streamId(psStreamId);
-        return encodeAndSendRequest(redirectChnl, marketPriceRequest, 0, error);
+        return encodeAndSendRequest(redirectChnl, marketPriceRequest, errorInfo);
+    }
+    
+    void loginStreamId(int streamId)
+    {
+    	loginStreamId = streamId;
     }
 }

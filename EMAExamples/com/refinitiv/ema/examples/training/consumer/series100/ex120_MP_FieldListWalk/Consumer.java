@@ -5,34 +5,29 @@
 // *|           Copyright (C) 2019 Refinitiv. All rights reserved.            		--
 ///*|----------------------------------------------------------------------------------------------------
 
-package com.thomsonreuters.ema.examples.training.consumer.series100.example120__MarketPrice__FieldListWalk;
+package com.refinitiv.ema.examples.training.consumer.series100.ex120_MP_FieldListWalk;
 
-import java.io.BufferedWriter;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.Iterator;
-import com.thomsonreuters.ema.access.FieldEntry;
-import com.thomsonreuters.ema.access.Msg;
-import com.thomsonreuters.ema.access.AckMsg;
+import com.refinitiv.ema.access.FieldEntry;
+import com.refinitiv.ema.access.Msg;
+import com.refinitiv.ema.access.AckMsg;
 
-import com.thomsonreuters.ema.access.GenericMsg;
-import com.thomsonreuters.ema.access.RefreshMsg;
-import com.thomsonreuters.ema.access.StatusMsg;
-import com.thomsonreuters.ema.access.UpdateMsg;
-import com.thomsonreuters.ema.access.DataType;
+import com.refinitiv.ema.access.GenericMsg;
+import com.refinitiv.ema.access.RefreshMsg;
+import com.refinitiv.ema.access.StatusMsg;
+import com.refinitiv.ema.access.UpdateMsg;
+import com.refinitiv.ema.access.DataType;
 
-import com.thomsonreuters.ema.access.EmaFactory;
-import com.thomsonreuters.ema.access.FieldList;
-import com.thomsonreuters.ema.access.OmmConsumer;
-import com.thomsonreuters.ema.access.OmmConsumerClient;
-import com.thomsonreuters.ema.access.OmmConsumerEvent;
-import com.thomsonreuters.ema.access.OmmException;
+import com.refinitiv.ema.access.EmaFactory;
+import com.refinitiv.ema.access.FieldList;
+import com.refinitiv.ema.access.OmmConsumer;
+import com.refinitiv.ema.access.OmmConsumerClient;
+import com.refinitiv.ema.access.OmmConsumerEvent;
+import com.refinitiv.ema.access.OmmException;
 //for partial update
 import java.util.TreeMap;
-import com.thomsonreuters.ema.access.RmtesBuffer;
-import com.thomsonreuters.ema.access.Data;
-import com.thomsonreuters.ema.access.DataType.DataTypes;
+import com.refinitiv.ema.access.RmtesBuffer;
 
 class AppClient implements OmmConsumerClient
 {
@@ -138,7 +133,7 @@ public class Consumer
 			
 			consumer  = EmaFactory.createOmmConsumer(EmaFactory.createOmmConsumerConfig().host("192.168.27.48:14002").username("user"));
 			
-			consumer.registerClient( EmaFactory.createReqMsg().serviceName("API_ELEKTRON_EDGE_TOKYO").name("FXFX"), appClient, 0);
+			consumer.registerClient( EmaFactory.createReqMsg().serviceName("ELEKTRON_DD").name("0005bk.HKd"), appClient, 0);
 			
 			Thread.sleep(30000);			// API calls onRefreshMsg(), onUpdateMsg() and onStatusMsg()
 		}
@@ -152,5 +147,3 @@ public class Consumer
 		}
 	}
 }
-
-
